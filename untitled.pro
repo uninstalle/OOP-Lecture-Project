@@ -26,10 +26,14 @@ CONFIG += c++11
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+    ImageConverter.cpp \
+    ImageProcess.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+    ImageConverter.h \
+    ImageProcess.h
 
 FORMS += \
         mainwindow.ui
