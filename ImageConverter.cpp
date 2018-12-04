@@ -26,6 +26,10 @@ QImage ImageConverter::MatToQImage(MAT Mat)
 	//8 bits, 1 channel
 	case CV_8UC1:
 	{
+	// A tip for readers:
+	// QImage constructed in this way(using existing data) will not delete
+	// its data after this QImage itself destructed.
+	// Thus using it in converting is safe.
 		QImage image(mat.data, mat.cols, mat.rows, QImage::Format_Indexed8);
 		initializeColorTable();
 		image.setColorTable(ColorTable);

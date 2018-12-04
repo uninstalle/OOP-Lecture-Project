@@ -2,7 +2,6 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "Histogram.h"
 
 class QPainter;
 class QImage;
@@ -23,7 +22,6 @@ protected:
     void paintEvent(QPaintEvent *);
 private:
     Ui::MainWindow *ui;
-	Histogram *h;
 };
 
 #endif // MAINWINDOW_H

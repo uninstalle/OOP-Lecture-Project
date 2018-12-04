@@ -43,9 +43,6 @@
     <ClCompile Include="mainwindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Histogram.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="ImageProcess.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -75,9 +72,6 @@
     </QtUic>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Histogram.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
     <ClInclude Include="ImageProcess.h">
       <Filter>Header Files</Filter>
     </ClInclude>

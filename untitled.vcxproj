@@ -187,7 +187,6 @@
     </QtUic>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Histogram.cpp" />
     <ClCompile Include="ImageConverter.cpp" />
     <ClCompile Include="ImageProcess.cpp" />
     <ClCompile Include="main.cpp" />
@@ -214,7 +213,6 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">release\moc_predefs.h;%(Outputs)</Outputs>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </CustomBuild>
-    <ClInclude Include="Histogram.h" />
     <ClInclude Include="ImageConverter.h" />
     <ClInclude Include="ImageProcess.h" />
     <ClInclude Include="ui_mainwindow.h" />
