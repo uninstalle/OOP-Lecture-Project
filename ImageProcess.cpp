@@ -18,10 +18,10 @@ ImageProcess::MAT ImageProcess::generate3ChannelsNormalTexture(MAT Mat)
 	for (int i = 0; i < mat.rows; ++i)
 		for (int j = 0; j < mat.cols; ++j)
 		{
-			double x = (mat.at<cv::Vec4b>(i, j)[2] / 255.0) * 2 - 1;
-			double y = (mat.at<cv::Vec4b>(i, j)[1] / 255.0) * 2 - 1;
+			double x = (mat.at<cv::Vec3b>(i, j)[2] / 255.0) * 2 - 1;
+			double y = (mat.at<cv::Vec3b>(i, j)[1] / 255.0) * 2 - 1;
 			double z = cv::sqrt(1 - x * x - y * y);
-			mat.at<cv::Vec4b>(i, j)[0] = (z*0.5 + 0.5) * 255;
+			mat.at<cv::Vec3b>(i, j)[0] = (z*0.5 + 0.5) * 255;
 		}
 
 	return Mat;
