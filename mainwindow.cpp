@@ -10,9 +10,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui(new Ui::MainWindow)
 {
 	auto image = new QImage("1.jpg");
-	auto mat = ImageConverter::QImageToMat(*image);
-	mat = ImageProcess::GaussianBlur(newProcessor, mat, 1);
-	newProcessor.Layers.push_back(mat);
+	newProcessor.loadImage(ImageConverter::QImageToMat(*image));
+	newProcessor.Layers.push_back(ImageProcess::GaussianBlur(newProcessor, newProcessor.getTopTrace(), 1));
 
 	ui->setupUi(this);
 }

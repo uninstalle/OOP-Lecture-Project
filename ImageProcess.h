@@ -31,7 +31,7 @@ public:
 	{
 		traces.pop_back();
 	}
-	MAT top() const;
+	MAT top();
 };
 
 class ImageProcess
@@ -43,6 +43,9 @@ class ImageProcess
 	};
 	static cv::Mat& parseMAT(MAT Mat);
 	static MAT packMAT(cv::Mat mat);
+
+
+	TraceStack Traces;
 public:
 
 	//TODO:支持多个选择区域
@@ -50,9 +53,12 @@ public:
 	//TODO:图层
 	std::deque<MAT> Layers;
 	//保存MAX_TRACES个mat,用于撤销
-	TraceStack Traces;
 
-
+	MAT getTopTrace()
+	{
+		return Traces.top();
+	}
+	void loadImage(MAT mat);
 	static MAT GaussianBlur(ImageProcess &process, MAT Mat, double strength);
 };
 

@@ -8,9 +8,9 @@ void TraceStack::push(MAT Mat)
 		traces.erase(traces.begin());
 }
 
-MAT TraceStack::top() const
+MAT TraceStack::top()
 {
-		return *traces.end();
+		return *(--traces.end());
 }
 
 
@@ -22,6 +22,13 @@ cv::Mat& ImageProcess::parseMAT(MAT Mat)
 MAT ImageProcess::packMAT(cv::Mat mat)
 {
 	return { std::make_shared<cv::Mat>(mat) };
+}
+
+
+void ImageProcess::loadImage(MAT Mat)
+{
+	Traces.push(Mat);
+	//Layers.push_back(Mat);
 }
 
 
