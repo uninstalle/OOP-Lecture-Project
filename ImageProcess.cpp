@@ -1,28 +1,46 @@
 #include "ImageProcess.h"
 #include <opencv2/opencv.hpp>
 
-cv::Mat& ImageProcess::parseMAT(MAT Mat)
+void TraceStack::push(MAT Mat)
 {
-	return *Mat;
+	traces.push_back(Mat);
+	if (traces.size() > MAX_TRACES)
+		traces.erase(traces.begin());
+}
+
+MAT TraceStack::top() const
+{
+		return *traces.end();
 }
 
 
-ImageProcess::MAT ImageProcess::generate3ChannelsNormalTexture(MAT Mat)
+cv::Mat& ImageProcess::parseMAT(MAT Mat)
+{
+	return *Mat.mat;
+}
+
+MAT ImageProcess::packMAT(cv::Mat mat)
+{
+	return { std::make_shared<cv::Mat>(mat) };
+}
+
+
+//strength [0,1]
+MAT ImageProcess::GaussianBlur(ImageProcess &processor, MAT Mat, double strength)
 {
 	auto mat = parseMAT(Mat);
+	cv::Mat dst;
+	//对strength做线性插值
+	int size = 3 + strength * (std::min(mat.rows, mat.cols) / 10.0 - 3);
+	//kernel必须是奇数尺寸
+	if (size % 2 == 0) ++size;
+	cv::Size kernel_size(size, size);
 
-	//Warning : This is just a test program. Mat here must be CV_8UC4.
-	//In real case, You need to process depend on the type of mat.
-	//This function isn't that useful in fact. But my CG project happened to need it.
-
-	for (int i = 0; i < mat.rows; ++i)
-		for (int j = 0; j < mat.cols; ++j)
-		{
-			double x = (mat.at<cv::Vec4b>(i, j)[2] / 255.0) * 2 - 1;
-			double y = (mat.at<cv::Vec4b>(i, j)[1] / 255.0) * 2 - 1;
-			double z = cv::sqrt(1 - x * x - y * y);
-			mat.at<cv::Vec4b>(i, j)[0] = (z*0.5 + 0.5) * 255;
-		}
-
-	return Mat;
+	//自己编写的处理函数的参数列表要类似cv库中函数的写法(如下GaussianBlur)
+	cv::GaussianBlur(mat, dst, kernel_size, 0);
+	
+	MAT DST = packMAT(dst);
+	//将完成处理的mat推入traces中,用于撤销上一次修改等功能
+	processor.Traces.push(DST);
+	return DST;
 }

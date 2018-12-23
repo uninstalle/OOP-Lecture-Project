@@ -13,7 +13,12 @@ static void initializeColorTable()
 
 cv::Mat& ImageConverter::parseMAT(MAT Mat)
 {
-	return *Mat;
+	return *Mat.mat;
+}
+
+MAT ImageConverter::packMAT(cv::Mat mat)
+{
+	return { std::make_shared<cv::Mat>(mat) };
 }
 
 
@@ -60,18 +65,20 @@ QImage ImageConverter::MatCopyToQImage(MAT Mat)
 	return MatToQImage(Mat).copy();
 }
 
-ImageConverter::MAT ImageConverter::QImageToMat(QImage& image)
+MAT ImageConverter::QImageToMat(QImage& image)
 {
+	// Using existing data means Mat will not automatically deallocate
+	// these memories. Remember to free.
 	switch (image.format())
 	{
 	case QImage::Format_Indexed8:
 	{
-		MAT retMat = new cv::Mat(image.height(), image.width(), CV_8UC1, reinterpret_cast<void*>(image.bits()), image.bytesPerLine());
+		MAT retMat{ std::make_shared<cv::Mat>(cv::Mat(image.height(), image.width(), CV_8UC1, reinterpret_cast<void*>(image.bits()), image.bytesPerLine())) };
 		return retMat;
 	}
 	case QImage::Format_RGB888:
 	{
-		MAT retMat = new cv::Mat(image.height(), image.width(), CV_8UC3, reinterpret_cast<void*>(image.bits()), image.bytesPerLine());
+		MAT retMat{ std::make_shared<cv::Mat>(cv::Mat(image.height(), image.width(), CV_8UC3, reinterpret_cast<void*>(image.bits()), image.bytesPerLine())) };
 		cv::cvtColor(parseMAT(retMat), parseMAT(retMat), cv::COLOR_BGR2RGB);
 		return retMat;
 	}
@@ -79,7 +86,7 @@ ImageConverter::MAT ImageConverter::QImageToMat(QImage& image)
 	case QImage::Format_ARGB32:
 	case QImage::Format_ARGB32_Premultiplied:
 	{
-		MAT retMat = new cv::Mat(image.height(), image.width(), CV_8UC4, reinterpret_cast<void*>(image.bits()), image.bytesPerLine());
+		MAT retMat{ std::make_shared<cv::Mat>(cv::Mat(image.height(), image.width(), CV_8UC4, reinterpret_cast<void*>(image.bits()), image.bytesPerLine())) };
 		return retMat;
 	}
 	default:
@@ -87,7 +94,7 @@ ImageConverter::MAT ImageConverter::QImageToMat(QImage& image)
 	}
 }
 
-ImageConverter::MAT ImageConverter::QImageCopyToMat(QImage& image)
+MAT ImageConverter::QImageCopyToMat(QImage& image)
 {
 	MAT retMat = QImageToMat(image);
 	parseMAT(retMat) = parseMAT(retMat).clone();

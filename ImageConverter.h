@@ -6,11 +6,15 @@ namespace cv {
 	class Mat;
 }
 
+struct MAT
+{
+	std::shared_ptr<cv::Mat> mat;
+};
 
 class ImageConverter {
-
-	using MAT = cv::Mat*;
+	
 	static cv::Mat& parseMAT(MAT Mat);
+	static MAT packMAT(cv::Mat mat);
 public:
 	//ATTENTION: This function does shallow copy.
 	static QImage MatToQImage(MAT Mat);
