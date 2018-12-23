@@ -1,5 +1,6 @@
 #include "ImageProcess.h"
 #include <opencv2/opencv.hpp>
+#include "Filter.h"
 
 void TraceStack::push(MAT Mat)
 {
@@ -33,7 +34,7 @@ void ImageProcess::loadImage(MAT Mat)
 
 
 //strength [0,1]
-MAT ImageProcess::GaussianBlur(ImageProcess &processor, MAT Mat, double strength)
+MAT ImageProcess::GaussianBlur(ImageProcess &process, MAT Mat, double strength)
 {
 	auto mat = parseMAT(Mat);
 	cv::Mat dst;
@@ -48,6 +49,14 @@ MAT ImageProcess::GaussianBlur(ImageProcess &processor, MAT Mat, double strength
 	
 	MAT DST = packMAT(dst);
 	//将完成处理的mat推入traces中,用于撤销上一次修改等功能
-	processor.Traces.push(DST);
+	process.Traces.push(DST);
+	return DST;
+}
+
+MAT ImageProcess::Sculpture(ImageProcess& process, MAT Mat)
+{
+	auto dst = SculptureFilter(parseMAT(Mat));
+	auto DST = packMAT(dst);
+	process.Traces.push(DST);
 	return DST;
 }

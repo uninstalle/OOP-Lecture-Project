@@ -1,7 +1,7 @@
 #include "Filter.h"
-using namespace Method;
+#include <opencv2/highgui/highgui.hpp>
 
-Mat Filter::NostalgicHueFilter(Mat src) {
+Mat NostalgicHueFilter(Mat src) {
 	
 	int height = src.rows;
 	int width = src.cols;
@@ -35,7 +35,7 @@ Mat Filter::NostalgicHueFilter(Mat src) {
 	return src;
 }
 
-Mat Filter::StrongLightFilter(Mat src) {
+Mat StrongLightFilter(Mat src) {
 
 	int height = src.rows;
 	int width = src.cols;
@@ -64,7 +64,7 @@ Mat Filter::StrongLightFilter(Mat src) {
 	return src;
 }
 
-Mat Filter::DarkTownFilter(Mat src, double DarkDegree) {
+Mat DarkTownFilter(Mat src, double DarkDegree) {
 
 	int height = src.rows;
 	int width = src.cols;
@@ -83,7 +83,7 @@ Mat Filter::DarkTownFilter(Mat src, double DarkDegree) {
 	return src;
 }
 
-Mat Filter::FeatherFilter(Mat src, double VagueRatio) {
+Mat FeatherFilter(Mat src, double VagueRatio) {
 
 	int height = src.rows;
 	int width = src.cols;
@@ -122,7 +122,7 @@ Mat Filter::FeatherFilter(Mat src, double VagueRatio) {
 	return src;
 }
 
-Mat Filter::MosaicFilter(Mat src, int size) {
+Mat MosaicFilter(Mat src, int size) {
 	
 	int height = src.rows;
 	int width = src.cols;
@@ -159,7 +159,7 @@ Mat Filter::MosaicFilter(Mat src, int size) {
 	return src;
 }
 
-Mat Filter::SculptureFilter(Mat src) {
+Mat SculptureFilter(Mat src) {
 	
 	Mat NewSrc = src;
 	int height = src.rows;
@@ -181,7 +181,7 @@ Mat Filter::SculptureFilter(Mat src) {
 	return NewSrc;
 }
 
-Mat Filter::DiffusionFilter(Mat src) {
+Mat DiffusionFilter(Mat src) {
 
 	Mat NewSrc = src;
 	int height = src.rows;
@@ -202,7 +202,7 @@ Mat Filter::DiffusionFilter(Mat src) {
 	return NewSrc;
 }
 
-Mat Filter::GaussianBlurFilter(Mat src, int size) {
+Mat GaussianBlurFilter(Mat src, int size) {
 	
 	Mat NewSrc = src;
 	GaussianBlur(src, NewSrc, Size(2 * size - 1, 2 * size - 1), 0);
@@ -210,7 +210,7 @@ Mat Filter::GaussianBlurFilter(Mat src, int size) {
 
 }
 
-Mat Filter::WindRilter(Mat src, int strength) {
+Mat WindFilter(Mat src, int strength) {
 
 	int height = src.rows;
 	int width = src.cols;

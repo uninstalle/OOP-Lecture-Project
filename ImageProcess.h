@@ -60,6 +60,7 @@ public:
 	}
 	void loadImage(MAT mat);
 	static MAT GaussianBlur(ImageProcess &process, MAT Mat, double strength);
+	static MAT Sculpture(ImageProcess &process, MAT Mat);
 };
 
 #endif
