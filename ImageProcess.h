@@ -5,33 +5,50 @@
 #include "ImageConverter.h"
 
 
-/*
- * 如何使用ImageProcess和ImageConverter：
- * ImageProcess.h隐藏了cv::Mat的实现，因此前端不需要准备OpenCV环境即可包含头文件
- * 前端调试时，可以自行将ImageProcess.cpp中的实现修改为不需要OpenCV。
- * 例如QImageToMat转换函数不对QImage做任何转换，只是返回QImage的指针；MatToQImage也只是解析指针
- * 当前后端合并时，再把ImageProcess.cpp改为当前的有作用的实现。
- * 由于ImageProcess.cpp不包含Qt头文件，因此后端不需要拥有Qt环境。
- *
- * ImageConvertor.h同样隐藏了cv::Mat的实现
- * 便于前端调试时脱离OpenCV环境使用。
- * 后端没有使用需求，因此在头文件中直接使用了Qt类。
- */
 
+class Layer
+{
+private:
+	MAT value;
+	unsigned ID;
+	//利用左上点和右下点标记图层的大小.图层大小只影响绘制时的大小,不影响该图层的value的矩阵尺寸
+	std::pair<int, int> topLeftPoint, bottomRightPoint;
+
+	static int ID_dispatcher;
+public:
+	Layer(const MAT value) :value(value), ID(++ID_dispatcher), topLeftPoint({ 0,0 }), bottomRightPoint({ 0,0 }) { }
+	Layer(const MAT value, int leftUpX, int leftUpY, int rightDownX, int rightDownY)
+		:value(value), ID(++ID_dispatcher), topLeftPoint({ leftUpX,leftUpY }), bottomRightPoint({ rightDownX,rightDownY }) {}
+	unsigned getID() const { return ID; }
+	MAT getMat() { return value; }
+	void setMat(const MAT value) { this->value = value; }
+	std::pair<int, int> getLeftUpPoint() { return topLeftPoint; }
+	std::pair<int, int> getRightDownPoint() { return bottomRightPoint; }
+	void setTopLeftPoint(int x, int y) { topLeftPoint.first = x; topLeftPoint.second = y; }
+	void setBottomRightPoint(int x, int y) { bottomRightPoint.first = x; bottomRightPoint.second = y; }
+
+};
+
+struct Trace
+{
+	MAT traceValue;
+	unsigned traceLayerID;
+	Trace(const MAT value, const unsigned layerID) :traceValue(value), traceLayerID(layerID) {}
+};
 
 class TraceStack
 {
 private:
 	enum { MAX_TRACES = 5 };
-	std::vector<MAT> traces;
+	std::vector<Trace> traces;
 public:
 	TraceStack() = default;
-	void push(MAT Mat);
+	void push(MAT changedMat, unsigned layerID);
 	void pop()
 	{
 		traces.pop_back();
 	}
-	MAT top();
+	Trace top();
 };
 
 class ImageProcess
@@ -45,22 +62,33 @@ class ImageProcess
 	static MAT packMAT(cv::Mat mat);
 
 
+	//保存MAX_TRACES个mat,用于撤销
 	TraceStack Traces;
 public:
 
 	//TODO:支持多个选择区域
 	std::vector<ImagePartial> SelectedParts;
-	//TODO:图层
-	std::deque<MAT> Layers;
-	//保存MAX_TRACES个mat,用于撤销
 
-	MAT getTopTrace()
-	{
-		return Traces.top();
-	}
-	void loadImage(MAT mat);
-	static MAT GaussianBlur(ImageProcess &process, MAT Mat, double strength);
-	static MAT Sculpture(ImageProcess &process, MAT Mat);
+	//TODO:图层
+	std::deque<Layer> Layers;
+
+	//撤销上一次的修改
+	void revertChange();
+
+	//将一个MAT设置为该process的顶层图层,该图层将在其他图层的上方
+	void loadImageAsTopLayer(MAT mat);
+	//将一个MAT设置为该process的底层图层,该图层将在其他图层的下方
+	void loadImageAsBottomLayer(MAT mat);
+
+	void deleteLayer(Layer &layer);
+	void deleteLayer(unsigned layerID);
+	void moveLayerUp(Layer &layer);
+	void moveLayerUp(unsigned layerID);
+	void moveLayerDown(Layer &layer);
+	void moveLayerDown(unsigned layerID);
+
+	static void GaussianBlur(ImageProcess &process, Layer &layer, double strength);
+	static void Sculpture(ImageProcess &process, Layer &layer);
 };
 
 #endif

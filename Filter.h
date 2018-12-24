@@ -1,7 +1,7 @@
 #pragma once
 #include <opencv2/opencv.hpp>
 
-using namespace cv;
+using cv::Mat;
 
 Mat NostalgicHueFilter(Mat src);							//怀旧色调滤镜
 Mat StrongLightFilter(Mat src);								//强光滤镜

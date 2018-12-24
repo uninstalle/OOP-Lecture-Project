@@ -1,5 +1,4 @@
 #include "Filter.h"
-#include <opencv2/highgui/highgui.hpp>
 
 Mat NostalgicHueFilter(Mat src) {
 	
@@ -161,7 +160,7 @@ Mat MosaicFilter(Mat src, int size) {
 
 Mat SculptureFilter(Mat src) {
 	
-	Mat NewSrc = src;
+	Mat NewSrc = src.clone();
 	int height = src.rows;
 	int width = src.cols;
 
@@ -186,7 +185,7 @@ Mat DiffusionFilter(Mat src) {
 	Mat NewSrc = src;
 	int height = src.rows;
 	int width = src.cols;
-	RNG rng;
+	cv::RNG rng;
 
 	for (int y = 0; y < height; y++) {
 		uchar *Q = src.ptr<uchar>(y);
@@ -205,7 +204,7 @@ Mat DiffusionFilter(Mat src) {
 Mat GaussianBlurFilter(Mat src, int size) {
 	
 	Mat NewSrc = src;
-	GaussianBlur(src, NewSrc, Size(2 * size - 1, 2 * size - 1), 0);
+	GaussianBlur(src, NewSrc, cv::Size(2 * size - 1, 2 * size - 1), 0);
 	return NewSrc;
 
 }
@@ -214,7 +213,7 @@ Mat WindFilter(Mat src, int strength) {
 
 	int height = src.rows;
 	int width = src.cols;
-	RNG rng;
+	cv::RNG rng;
 
 	int density = width / (strength * 20);
 	int length = 2 * strength;
