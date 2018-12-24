@@ -217,6 +217,7 @@
     <ClInclude Include="Filter.h" />
     <ClInclude Include="ImageConverter.h" />
     <ClInclude Include="ImageProcess.h" />
+    <ClInclude Include="MAT.h" />
     <ClInclude Include="ui_mainwindow.h" />
   </ItemGroup>
   <ItemGroup>

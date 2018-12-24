@@ -14,7 +14,7 @@ void TraceStack::push(MAT changedMat, unsigned layerID)
 
 Trace TraceStack::top()
 {
-	return traces.back();
+	return traces.front();
 }
 
 
@@ -37,62 +37,114 @@ void ImageProcess::revertChange()
 }
 
 
-void ImageProcess::loadImageAsTopLayer(MAT Mat)
+void LayerStorage::addLayerAsTop(MAT Mat)
 {
 	Layer newLayer{ Mat };
-	Layers.push_back(newLayer);
+	addLayerAsTop(newLayer);
 }
 
-void ImageProcess::loadImageAsBottomLayer(MAT Mat)
+void LayerStorage::addLayerAsTop(Layer& layer)
+{
+	layers.push_front(layer);
+	layerLevel++;
+}
+
+
+void LayerStorage::addLayerAsBottom(MAT Mat)
 {
 	Layer newLayer{ Mat };
-	Layers.push_front(newLayer);
+	addLayerAsBottom(newLayer);
 }
 
-void ImageProcess::deleteLayer(Layer& layer)
+void LayerStorage::addLayerAsBottom(Layer& layer)
+{
+	layers.push_back(layer);
+	layerLevel++;
+}
+
+Layer& LayerStorage::operator[](int i)
+{
+	return layers[i];
+}
+
+void LayerStorage::addLayerAfter(MAT Mat, int index)
+{
+	auto layer = layers[index];
+	addLayerAfter(Mat, layer);
+}
+
+void LayerStorage::addLayerAfter(MAT Mat, Layer& layer)
+{
+	Layer newLayer{ Mat };
+	auto it = std::find_if(layers.begin(), layers.end(),
+		[layer](Layer &L) {return L.getID() == layer.getID(); });
+	if (it == layers.end())
+		throw std::runtime_error("Add layer failed. Layer after not found.");
+	layers.insert(it, newLayer);
+	layerLevel++;
+}
+
+
+void LayerStorage::deleteLayer(Layer& layer)
 {
 	deleteLayer(layer.getID());
 }
 
-void ImageProcess::deleteLayer(unsigned layerID)
+void LayerStorage::deleteLayer(unsigned layerID)
 {
-	auto it = std::find_if(Layers.begin(), Layers.end(),
+	auto it = std::find_if(layers.begin(), layers.end(),
 		[layerID](Layer &L) {return L.getID() == layerID; });
-	if (it == Layers.end())
-		throw std::runtime_error("Delete layer failed. Layer ID =" + std::to_string(layerID));
-	Traces.push(it->getMat(), it->getID());
-	Layers.erase(it);
+	if (it == layers.end())
+		throw std::runtime_error("Delete layer failed. Layer not found. Layer ID =" + std::to_string(layerID));
+	//Traces.push(it->getMat(), it->getID());
+	layers.erase(it);
+	layerLevel--;
 }
 
 
-void ImageProcess::moveLayerUp(Layer& layer)
+void LayerStorage::moveLayerUp(Layer& layer)
 {
-	moveLayerUp(layer.getID());
+	moveLayerUpByID(layer.getID());
 }
 
-void ImageProcess::moveLayerUp(unsigned layerID)
+void LayerStorage::moveLayerUpByID(unsigned layerID)
 {
-	auto it = std::find_if(Layers.begin(), Layers.end(),
+	auto it = std::find_if(layers.begin(), layers.end(),
 		[layerID](Layer &L) {return L.getID() == layerID; });
-	if (it == Layers.end()-1)
+	if (it == layers.end())
+		throw std::runtime_error("Move layer failed. Layer not found. Layer ID=" + std::to_string(layerID));
+	if (it == layers.begin())
+		return;
+	auto itafter = it - 1;
+	std::swap(*it, *itafter);
+}
+
+void LayerStorage::moveLayerUp(int index)
+{
+	moveLayerUp(layers[index]);
+}
+
+
+void LayerStorage::moveLayerDown(Layer& layer)
+{
+	moveLayerDownByID(layer.getID());
+}
+
+void LayerStorage::moveLayerDownByID(unsigned layerID)
+{
+	auto it = std::find_if(layers.begin(), layers.end(),
+		[layerID](Layer &L) {return L.getID() == layerID; });
+	if (it == layers.end())
+		throw std::runtime_error("Move layer failed. Layer not found. Layer ID=" + std::to_string(layerID));
+	if (it == layers.end() - 1)
 		return;
 	auto itafter = it + 1;
 	std::swap(*it, *itafter);
 }
 
-void ImageProcess::moveLayerDown(Layer& layer)
+void LayerStorage::moveLayerDown(int index)
 {
-	moveLayerDown(layer.getID());
-}
-
-void ImageProcess::moveLayerDown(unsigned layerID)
-{
-	auto it = std::find_if(Layers.begin(), Layers.end(),
-		[layerID](Layer &L) {return L.getID() == layerID; });
-	if (it == Layers.begin())
-		return;
-	auto itafter = it - 1;
-	std::swap(*it, *itafter);
+	moveLayerDown(layers[index]);
 }
 
 

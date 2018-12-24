@@ -1,8 +1,8 @@
 #ifndef _IMAGE_PROCESS_H
 #define _IMAGE_PROCESS_H
-#include <opencv2/core/mat.hpp>
 #include <deque>
-#include "ImageConverter.h"
+#include <vector>
+#include "MAT.h"
 
 
 
@@ -29,6 +29,39 @@ public:
 
 };
 
+class LayerStorage
+{
+private:
+	std::deque<Layer> layers;
+	int layerLevel = 0;
+public:
+	LayerStorage() = default;
+	void addLayerAsTop(MAT Mat);
+	void addLayerAsTop(Layer &layer);
+	void addLayerAsBottom(MAT Mat);
+	void addLayerAsBottom(Layer &layer);
+	void addLayerAfter(MAT Mat, int index);
+	void addLayerAfter(MAT Mat, Layer &layer);
+	void deleteLayer(Layer &layer);
+	void deleteLayer(unsigned layerID);
+	void moveLayerUp(Layer &layer);
+	void moveLayerUp(int index);
+	void moveLayerUpByID(unsigned layerID);
+	void moveLayerDown(Layer &layer);
+	void moveLayerDown(int index);
+	void moveLayerDownByID(unsigned layerID);
+
+	Layer& front() { return layers.front(); }
+	Layer& back() { return layers.back(); }
+
+	auto begin()->std::deque<Layer>::iterator { return layers.begin(); }
+	auto end()->std::deque<Layer>::iterator { return layers.end(); }
+	auto rbegin()->std::deque<Layer>::reverse_iterator { return layers.rbegin(); }
+	auto rend()->std::deque<Layer>::reverse_iterator { return layers.rend(); }
+
+	Layer& operator[](int i);
+};
+
 struct Trace
 {
 	MAT traceValue;
@@ -53,11 +86,6 @@ public:
 
 class ImageProcess
 {
-	struct ImagePartial
-	{
-		MAT src;
-		cv::Rect part;
-	};
 	static cv::Mat& parseMAT(MAT Mat);
 	static MAT packMAT(cv::Mat mat);
 
@@ -67,25 +95,14 @@ class ImageProcess
 public:
 
 	//TODO:支持多个选择区域
-	std::vector<ImagePartial> SelectedParts;
+	//std::vector<ImagePartial> SelectedParts;
 
-	//TODO:图层
-	std::deque<Layer> Layers;
+	LayerStorage Layers;
 
 	//撤销上一次的修改
 	void revertChange();
 
-	//将一个MAT设置为该process的顶层图层,该图层将在其他图层的上方
-	void loadImageAsTopLayer(MAT mat);
-	//将一个MAT设置为该process的底层图层,该图层将在其他图层的下方
-	void loadImageAsBottomLayer(MAT mat);
 
-	void deleteLayer(Layer &layer);
-	void deleteLayer(unsigned layerID);
-	void moveLayerUp(Layer &layer);
-	void moveLayerUp(unsigned layerID);
-	void moveLayerDown(Layer &layer);
-	void moveLayerDown(unsigned layerID);
 
 	static void GaussianBlur(ImageProcess &process, Layer &layer, double strength);
 	static void Sculpture(ImageProcess &process, Layer &layer);

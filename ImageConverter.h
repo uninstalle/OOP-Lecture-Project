@@ -1,15 +1,8 @@
 #ifndef _IMAGE_CONVERTER_H
 #define _IMAGE_CONVERTER_H
 #include <QImage>
+#include "MAT.h"
 
-namespace cv {
-	class Mat;
-}
-
-struct MAT
-{
-	std::shared_ptr<cv::Mat> mat;
-};
 
 class ImageConverter {
 	
