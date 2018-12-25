@@ -3,6 +3,7 @@
 #include <QPainter>
 #include "ImageConverter.h"
 #include "ImageProcess.h"
+#include "iostream"
 
 ImageProcess newProcessor;
 MainWindow::MainWindow(QWidget *parent) :
@@ -19,6 +20,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	newProcessor.Layers.moveLayerUp(newProcessor.Layers[1]);
 	//newProcessor.deleteLayer(newProcessor.Layers.at(1));
 	ImageProcess::Sculpture(newProcessor, newProcessor.Layers.front());
+	newProcessor.Layers.mergeLayers(newProcessor.Layers[0], newProcessor.Layers[1], 0.5);
+	newProcessor.Layers.mergeLayers(newProcessor.Layers[0], newProcessor.Layers[1], 0.5);
 	//newProcessor.revertChange();
 	//ImageProcess::GaussianBlur(newProcessor, newProcessor.Layers.front(), 1.0);
 
@@ -35,8 +38,8 @@ void MainWindow::paintEvent(QPaintEvent *)
 	QPainter painter(this);
 	for (auto it = newProcessor.Layers.rbegin(); it != newProcessor.Layers.rend(); ++it)
 	{
-		QPoint topLeft(it->getLeftUpPoint().first, it->getLeftUpPoint().second);
-		QPoint bottomRight(it->getRightDownPoint().first, it->getRightDownPoint().second);
+		QPoint topLeft(it->getTopLeftPoint().first, it->getTopLeftPoint().second);
+		QPoint bottomRight(it->getBottomRightPoint().first, it->getBottomRightPoint().second);
 		if (bottomRight.x() == 0 && bottomRight.y() == 0)
 		{
 			bottomRight.setX(this->width());
