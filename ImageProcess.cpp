@@ -333,6 +333,8 @@ auto getOverlapArea(Layer &layer1, Layer &layer2)
 
 void LayerStorage::mergeLayers(Layer& frontLayer, Layer& backLayer, double blendAlpha)
 {
+	auto frontMat = *frontLayer.getMat().mat;
+	auto backMat = *backLayer.getMat().mat;
 	//求两个图像的重叠范围
 	auto overlap = getOverlapArea(frontLayer, backLayer);
 
@@ -345,13 +347,11 @@ void LayerStorage::mergeLayers(Layer& frontLayer, Layer& backLayer, double blend
 
 	int newWidth = newBottomRight.first - newTopLeft.first,
 		newHeight = newBottomRight.second - newTopLeft.second;
-
-	cv::Mat newMat(newHeight, newWidth, frontLayer.getMat().mat->type());
+	//todo 此处的type直接使用了frontmat的type,实际上应该使用可兼容frontmat和backmat的type
+	cv::Mat newMat(newHeight, newWidth, frontMat.type());
 	Layer newLayer(packMAT(newMat), newTopLeft.first, newTopLeft.second, newBottomRight.first, newBottomRight.second);
 
-	//对两个原图像进行缩放,将图像调整至GUI中的缩放状态
-
-	//混合两个图像,填充新图像
+	//构造新图像中两个旧图像的ROI
 	cv::Rect newFrontArea(frontLayer.getTopLeftPoint().first - newTopLeft.first,
 		frontLayer.getTopLeftPoint().second - newTopLeft.second,
 		frontLayer.getBottomRightPoint().first - frontLayer.getTopLeftPoint().first,
@@ -360,33 +360,33 @@ void LayerStorage::mergeLayers(Layer& frontLayer, Layer& backLayer, double blend
 		backLayer.getTopLeftPoint().second - newTopLeft.second,
 		backLayer.getBottomRightPoint().first - backLayer.getTopLeftPoint().first,
 		backLayer.getBottomRightPoint().second - backLayer.getTopLeftPoint().second);
-	
 
 	auto frontROI = newMat(newFrontArea);
 	auto backROI = newMat(newBackArea);
 
-	cv::Rect frontOverlapArea(overlap.first.first - frontLayer.getTopLeftPoint().first,
-		overlap.first.second - frontLayer.getTopLeftPoint().second,
-		overlap.second.first - overlap.first.first,
-		overlap.second.second - overlap.first.second
-	); 
-	cv::Rect backOverlapArea(overlap.first.first - backLayer.getTopLeftPoint().first,
-		overlap.first.second - backLayer.getTopLeftPoint().second,
-		overlap.second.first - overlap.first.first,
-		overlap.second.second - overlap.first.second
-	);
-	auto frontMat = *frontLayer.getMat().mat;
-	auto backMat = *backLayer.getMat().mat;
-	auto frontBlendROI = frontMat(frontOverlapArea);
-	auto backBlendROI = backMat(backOverlapArea);
-
-	//将混合结果存放在frongLayer中
+	//如果两个图像有重叠部分,则构造两个旧图像中重叠位置的ROI,并完成混合
 	if (overlap.first != overlap.second)
 	{
+		//构造ROI
+		cv::Rect frontOverlapArea(overlap.first.first - frontLayer.getTopLeftPoint().first,
+			overlap.first.second - frontLayer.getTopLeftPoint().second,
+			overlap.second.first - overlap.first.first,
+			overlap.second.second - overlap.first.second
+		);
+		cv::Rect backOverlapArea(overlap.first.first - backLayer.getTopLeftPoint().first,
+			overlap.first.second - backLayer.getTopLeftPoint().second,
+			overlap.second.first - overlap.first.first,
+			overlap.second.second - overlap.first.second
+		);
+		auto frontBlendROI = frontMat(frontOverlapArea);
+		auto backBlendROI = backMat(backOverlapArea);
+
+		//将重叠位置的混合结果存放在frongLayer中
 		cv::addWeighted(frontBlendROI, blendAlpha,
 			backBlendROI, 1 - blendAlpha,
 			0.0, frontBlendROI);
 	}
+
 	//将结果复制到新图层上
 	cv::addWeighted(backROI, 0.0, backMat, 1.0, 0.0, backROI);
 	cv::addWeighted(frontROI, 0.0, frontMat, 1.0, 0.0, frontROI);
@@ -394,6 +394,7 @@ void LayerStorage::mergeLayers(Layer& frontLayer, Layer& backLayer, double blend
 	//清理图层
 	deleteLayer(frontLayer);
 	deleteLayer(backLayer);
+
 	addLayerAsTop(newLayer);
 
 }
