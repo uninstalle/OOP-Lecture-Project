@@ -55,6 +55,9 @@
     <ClCompile Include="MAT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="process_exception.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="mainwindow.h">
@@ -88,6 +91,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MAT.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="process_exception.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -193,6 +193,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mainwindow.cpp" />
     <ClCompile Include="MAT.cpp" />
+    <ClCompile Include="process_exception.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="mainwindow.h">
@@ -219,6 +220,7 @@
     <ClInclude Include="ImageConverter.h" />
     <ClInclude Include="ImageProcess.h" />
     <ClInclude Include="MAT.h" />
+    <ClInclude Include="process_exception.h" />
     <ClInclude Include="ui_mainwindow.h" />
   </ItemGroup>
   <ItemGroup>

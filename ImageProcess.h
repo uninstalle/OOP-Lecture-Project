@@ -13,22 +13,40 @@ private:
 	unsigned ID;
 	//利用左上点和右下点标记图层的大小.图层大小只影响绘制时的大小,不影响该图层的value的矩阵尺寸
 	std::pair<int, int> topLeftPoint, bottomRightPoint;
+	//图层的属性
+	unsigned property = 0;
+
+	enum LayerProperty
+	{
+		DRAW = 0x1, //需要绘制
+		RASTERIZED = 0x2, //光栅化
+		PRIMITIVE = 0x4 //含有图元
+	};
+	using layer_enum = unsigned;
 
 	static int ID_dispatcher;
 public:
 	Layer(const MAT value);
-	Layer(const MAT value, int leftUpX, int leftUpY, int rightDownX, int rightDownY)
-		:value(value), ID(++ID_dispatcher), topLeftPoint({ leftUpX,leftUpY }), bottomRightPoint({ rightDownX,rightDownY }) {}
+	Layer(const MAT value, int topLeftX, int topLeftY, int bottomRightX, int bottomRightY)
+		:value(value), ID(++ID_dispatcher), topLeftPoint({ topLeftX,topLeftY }), bottomRightPoint({ bottomRightX,bottomRightY }) {}
 	unsigned getID() const { return ID; }
-	MAT getMat() { return value; }
-	void setMat(const MAT value) { this->value = value; }
+
+	virtual MAT getMat() { return value; }
+	virtual void setMat(const MAT value) { this->value = value; }
+
 	std::pair<int, int> getTopLeftPoint() const { return topLeftPoint; }
 	std::pair<int, int> getTopRightPoint() const { return { bottomRightPoint.first,topLeftPoint.second }; }
 	std::pair<int, int> getBottomRightPoint() const { return bottomRightPoint; }
 	std::pair<int, int> getBottomLeftPoint() const { return { topLeftPoint.first,bottomRightPoint.second }; }
+
 	void setTopLeftPoint(int x, int y) { topLeftPoint.first = x; topLeftPoint.second = y; }
 	void setBottomRightPoint(int x, int y) { bottomRightPoint.first = x; bottomRightPoint.second = y; }
 
+	bool checkProperty(layer_enum property) const { return this->property&property; }
+	void enableProperty(layer_enum property) { this->property |= property; }
+	void disableProperty(layer_enum property) { this->property &= ~property; }
+
+	virtual ~Layer() = default;
 };
 
 class LayerStorage
@@ -37,6 +55,7 @@ private:
 	std::deque<Layer> layers;
 	int layerLevel = 0;
 	auto findLayerByID(unsigned layerID)->std::deque<Layer>::iterator;
+	//TODO 图层的属性
 public:
 	LayerStorage() = default;
 	int getLayerLevel() const { return layerLevel; }
@@ -64,6 +83,7 @@ public:
 	void mergeLayers(int frontIndex, int backIndex, double blendAlpha);
 	void mergeLayers(Layer &frontLayer, Layer &backLayer, double blendAlpha);
 	void mergeLayersByID(unsigned frontLayerID, unsigned backLayerID, double blendAlpha);
+	
 
 	Layer& front() { return layers.front(); }
 	Layer& back() { return layers.back(); }
@@ -116,7 +136,8 @@ public:
 	void revertChange();
 
 
-
+	static void AdjustContrastAndBrightness(ImageProcess &process, Layer &layer, double contrast, double brightness);
+	static void GammaCorrection(ImageProcess &process, Layer &layer, double gamma);
 	static void GaussianBlur(ImageProcess &process, Layer &layer, double strength);
 	static void Sculpture(ImageProcess &process, Layer &layer);
 };
