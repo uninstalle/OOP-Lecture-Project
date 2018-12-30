@@ -14,7 +14,7 @@ void TraceStack::push(MAT changedMat, unsigned layerID)
 
 Trace TraceStack::top()
 {
-	return traces.front();
+	return traces.back();
 }
 
 void ImageProcess::revertChange()
@@ -404,6 +404,32 @@ void LayerStorage::mergeLayersByID(unsigned frontLayerID, unsigned backLayerID, 
 	auto frontLayerIt = findLayerByID(frontLayerID);
 	auto backLayerIt = findLayerByID(backLayerID);
 	mergeLayers(*frontLayerIt, *backLayerIt, blendAlpha);
+}
+
+void ImageProcess::AdjustContrastAndBrightness(ImageProcess& process, Layer& layer, double contrast, double brightness)
+{
+	auto mat = parseMAT(layer.getMat());
+	process.Traces.push(layer.getMat(), layer.getID());
+	cv::Mat dst;
+	mat.convertTo(dst, -1, contrast, brightness);
+	MAT DST = packMAT(dst);
+	layer.setMat(DST);
+}
+
+void ImageProcess::GammaCorrection(ImageProcess& process, Layer& layer, double gamma)
+{
+	cv::Mat lookUpTable(1, 256, CV_8U);
+	auto p = lookUpTable.ptr();
+	for (int i = 0; i < 256; ++i)
+		p[i] = cv::saturate_cast<uchar>(pow(i / 255.0, gamma) * 255);
+
+	auto mat = parseMAT(layer.getMat());
+	process.Traces.push(layer.getMat(), layer.getID());
+	cv::Mat dst = mat.clone();
+	cv::LUT(mat, lookUpTable, dst);
+
+	MAT DST = packMAT(dst);
+	layer.setMat(DST);
 }
 
 

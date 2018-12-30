@@ -55,6 +55,15 @@
     <ClCompile Include="MAT.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GeomTrans.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="局部处理.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="process_exception.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="mainwindow.h">
@@ -90,5 +99,22 @@
     <ClInclude Include="MAT.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GeomTrans.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="局部处理.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="process_exception.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\魔棒区域示意.jpg" />
+    <Image Include="..\非规则（局部转换颜色空间）.jpg" />
+    <Image Include="..\魔棒高斯滤波.jpg" />
   </ItemGroup>
 </Project>

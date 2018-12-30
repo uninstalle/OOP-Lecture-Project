@@ -22,8 +22,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	ImageProcess::Sculpture(newProcessor, newProcessor.Layers.front());
 	newProcessor.Layers.mergeLayers(newProcessor.Layers[0], newProcessor.Layers[1], 0.5);
 	newProcessor.Layers.mergeLayers(newProcessor.Layers[0], newProcessor.Layers[1], 0.5);
+	ImageProcess::AdjustContrastAndBrightness(newProcessor, newProcessor.Layers.front(), 0.5, 0);
+	ImageProcess::GaussianBlur(newProcessor, newProcessor.Layers.front(), 1.0);
 	//newProcessor.revertChange();
-	//ImageProcess::GaussianBlur(newProcessor, newProcessor.Layers.front(), 1.0);
 
 	ui->setupUi(this);
 }
@@ -45,10 +46,8 @@ void MainWindow::paintEvent(QPaintEvent *)
 			bottomRight.setX(this->width());
 			bottomRight.setY(this->height());
 		}
-		QRect drawArea(topLeft,bottomRight);
+		QRect drawArea(topLeft, bottomRight);
 		painter.drawImage(drawArea, ImageConverter::MatToQImage(it->getMat()));
 	}
 
 }
-
-

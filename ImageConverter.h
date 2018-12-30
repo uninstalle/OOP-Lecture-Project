@@ -1,6 +1,6 @@
 #ifndef _IMAGE_CONVERTER_H
 #define _IMAGE_CONVERTER_H
-#include <QImage>
+#include <QtGui/QImage>
 #include "MAT.h"
 
 
