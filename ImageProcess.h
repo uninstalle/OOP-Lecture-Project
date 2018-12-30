@@ -1,28 +1,130 @@
 #ifndef _IMAGE_PROCESS_H
 #define _IMAGE_PROCESS_H
-/*
- * 如何使用ImageProcess和ImageConverter：
- * ImageProcess.h隐藏了cv::Mat的实现，因此前端不需要准备OpenCV环境即可包含头文件
- * 前端调试时，可以自行将ImageProcess.cpp中的实现修改为不需要OpenCV。
- * 例如QImageToMat转换函数不对QImage做任何转换，只是返回QImage的指针；MatToQImage也只是解析指针
- * 当前后端合并时，再把ImageProcess.cpp改为当前的有作用的实现。
- * 由于ImageProcess.cpp不包含Qt头文件，因此后端不需要拥有Qt环境。
- * 
- * ImageConvertor.h同样隐藏了cv::Mat的实现
- * 便于前端调试时脱离OpenCV环境使用。
- * 后端没有使用需求，因此在头文件中直接使用了Qt类。
- */
+#include <deque>
+#include <vector>
+#include "MAT.h"
 
-namespace cv {
-	class Mat;
-}
+
+
+class Layer
+{
+private:
+	MAT value;
+	unsigned ID;
+	//利用左上点和右下点标记图层的大小.图层大小只影响绘制时的大小,不影响该图层的value的矩阵尺寸
+	std::pair<int, int> topLeftPoint, bottomRightPoint;
+
+	static int ID_dispatcher;
+public:
+	Layer(const MAT value);
+	Layer(const MAT value, int leftUpX, int leftUpY, int rightDownX, int rightDownY)
+		:value(value), ID(++ID_dispatcher), topLeftPoint({ leftUpX,leftUpY }), bottomRightPoint({ rightDownX,rightDownY }) {}
+	unsigned getID() const { return ID; }
+	MAT getMat() { return value; }
+	void setMat(const MAT value) { this->value = value; }
+	std::pair<int, int> getTopLeftPoint() const { return topLeftPoint; }
+	std::pair<int, int> getTopRightPoint() const { return { bottomRightPoint.first,topLeftPoint.second }; }
+	std::pair<int, int> getBottomRightPoint() const { return bottomRightPoint; }
+	std::pair<int, int> getBottomLeftPoint() const { return { topLeftPoint.first,bottomRightPoint.second }; }
+	void setTopLeftPoint(int x, int y) { topLeftPoint.first = x; topLeftPoint.second = y; }
+	void setBottomRightPoint(int x, int y) { bottomRightPoint.first = x; bottomRightPoint.second = y; }
+
+};
+
+class LayerStorage
+{
+private:
+	std::deque<Layer> layers;
+	int layerLevel = 0;
+	auto findLayerByID(unsigned layerID)->std::deque<Layer>::iterator;
+public:
+	LayerStorage() = default;
+	int getLayerLevel() const { return layerLevel; }
+	void addLayerAsTop(MAT Mat);
+	void addLayerAsTop(Layer &layer);
+	void addLayerAsBottom(MAT Mat);
+	void addLayerAsBottom(Layer &layer);
+	void addLayerAfter(MAT Mat, int index);
+	void addLayerAfter(MAT Mat, Layer &layer);
+	void deleteLayer(Layer &layer);
+	void deleteLayer(unsigned layerID);
+	void moveLayerUp(Layer &layer);
+	void moveLayerUp(int index);
+	void moveLayerUpByID(unsigned layerID);
+	void moveLayerDown(Layer &layer);
+	void moveLayerDown(int index);
+	void moveLayerDownByID(unsigned layerID);
+	void moveLayerTo(int index, int targetIndex);
+	void moveLayerTo(Layer &layer, Layer &targetLayer);
+	void moveLayerToByID(unsigned layerID, unsigned targetLayerID);
+	void setLayerSizeAsImageSize(int index);
+	void setLayerSizeAsImageSize(Layer &layer);
+	void setLayerSizeAsImageSizeByID(unsigned layerID);
+	//alpha( [0,1] )是front图层的权重
+	void mergeLayers(int frontIndex, int backIndex, double blendAlpha);
+	void mergeLayers(Layer &frontLayer, Layer &backLayer, double blendAlpha);
+	void mergeLayersByID(unsigned frontLayerID, unsigned backLayerID, double blendAlpha);
+
+	Layer& front() { return layers.front(); }
+	Layer& back() { return layers.back(); }
+
+	auto begin()->std::deque<Layer>::iterator { return layers.begin(); }
+	auto end()->std::deque<Layer>::iterator { return layers.end(); }
+	auto rbegin()->std::deque<Layer>::reverse_iterator { return layers.rbegin(); }
+	auto rend()->std::deque<Layer>::reverse_iterator { return layers.rend(); }
+
+	Layer& operator[](int i);
+};
+
+struct Trace
+{
+	MAT traceValue;
+	unsigned traceLayerID = 0;
+	bool isDeleted = false;
+	Trace(const MAT value, const unsigned layerID) :traceValue(value), traceLayerID(layerID) {}
+};
+
+class TraceStack
+{
+private:
+	enum { MAX_TRACES = 5 };
+	std::vector<Trace> traces;
+public:
+	TraceStack() = default;
+	void push(MAT changedMat, unsigned layerID);
+	void pop()
+	{
+		traces.pop_back();
+	}
+	Trace top();
+};
 
 class ImageProcess
 {
-	using MAT = cv::Mat*;
-	static cv::Mat& parseMAT(MAT Mat);
+
+
+	//保存MAX_TRACES个mat,用于撤销
+	TraceStack Traces;
 public:
-	static MAT generate3ChannelsNormalTexture(MAT Mat);
+
+	//TODO:支持多个选择区域
+	//std::vector<ImagePartial> SelectedParts;
+
+	LayerStorage Layers;
+
+	//撤销上一次的修改
+	void revertChange();
+
+	static void GaussianBlur(ImageProcess &process, Layer &layer, double strength);				//高斯模糊
+
+	static void Sculpture(ImageProcess &process, Layer &layer);									//浮雕
+	static void NostalgicHue(ImageProcess &process, Layer &layer);								//怀旧
+	static void StrongLight(ImageProcess &process, Layer &layer);								//强光
+	static void DarkTown(ImageProcess &process, Layer &layer, double DarkDegree);				//暗调
+	static void Feather(ImageProcess &process, Layer &layer, double VagueRatio);				//羽化
+	static void Mosaic(ImageProcess &process, Layer &layer, int size);							//马赛克
+	static void Diffusion(ImageProcess &process, Layer &layer);									//扩散（毛玻璃）
+	static void Wind(ImageProcess &process, Layer &layer, int strength);						//风
 };
 
 #endif
