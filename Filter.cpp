@@ -1,7 +1,6 @@
 #include "Filter.h"
 
 Mat NostalgicHueFilter(Mat src) {
-
 	int height = src.rows;
 	int width = src.cols;
 	int Channels = src.channels();
@@ -109,7 +108,6 @@ Mat DarkTownFilter(Mat src, double DarkDegree) {
 }
 
 Mat FeatherFilter(Mat src, double VagueRatio) {
-
 	Mat NewSrc;
 	src.copyTo(NewSrc);
 
@@ -159,7 +157,6 @@ Mat FeatherFilter(Mat src, double VagueRatio) {
 }
 
 Mat MosaicFilter(Mat src, int size) {
-
 	int height = src.rows;
 	int width = src.cols;
 	double temp;
@@ -264,7 +261,6 @@ Mat DiffusionFilter(Mat src) {
 	else {
 		throw process_error(FilterChannelsError, "This filter does not support the number of the channels of the picture.");
 	}
-	
 }
 
 Mat WindFilter(Mat src, int strength) {

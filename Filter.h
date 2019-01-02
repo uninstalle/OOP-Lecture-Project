@@ -4,11 +4,11 @@
 
 using cv::Mat;
 
-Mat NostalgicHueFilter(Mat src);							//»³¾ÉÉ«µ÷ÂË¾µ
-Mat StrongLightFilter(Mat src);								//Ç¿¹âÂË¾µ
-Mat DarkTownFilter(Mat src, double DarkDegree = 1.0);		//°µµ÷ÂË¾µ£¬DarkDegreeÎª°µ¶È
-Mat FeatherFilter(Mat src, double VagueRatio = 0.5);		//Óğ»¯ÂË¾µ£¬VagueRatioÖ»ÄÜÈ¡0µ½1£¬Ô½´óÆä±ßÔµÄ£ºı±ÈÂÊÔ½¸ß£¨0Ïàµ±ÓÚÎ´Óğ»¯£© 
-Mat MosaicFilter(Mat src, int size = 5);					//ÂíÈü¿ËÂË¾µ£¬sizeÔ½´ó£¬´òÂëÔ½Ä£ºı
-Mat SculptureFilter(Mat src);								//¸¡µñÂË¾µ
-Mat DiffusionFilter(Mat src);								//À©É¢£¨Ã«²£Á§£©ÂË¾µ
-Mat WindFilter(Mat src, int strength);						//·çÂË¾µ£¬strengthÎª·çµÄÇ¿¶È£¬Ç¿¶ÈÔ½´ó£¬Ğ§¹ûÔ½Ã÷ÏÔ
+Mat NostalgicHueFilter(Mat src);							//æ€€æ—§è‰²è°ƒæ»¤é•œ
+Mat StrongLightFilter(Mat src);								//å¼ºå…‰æ»¤é•œ
+Mat DarkTownFilter(Mat src, double DarkDegree = 1.0);		//æš—è°ƒæ»¤é•œï¼ŒDarkDegreeä¸ºæš—åº¦
+Mat FeatherFilter(Mat src, double VagueRatio = 0.5);		//ç¾½åŒ–æ»¤é•œï¼ŒVagueRatioåªèƒ½å–0åˆ°1ï¼Œè¶Šå¤§å…¶è¾¹ç¼˜æ¨¡ç³Šæ¯”ç‡è¶Šé«˜ï¼ˆ0ç›¸å½“äºæœªç¾½åŒ–ï¼‰ 
+Mat MosaicFilter(Mat src, int size = 5);					//é©¬èµ›å…‹æ»¤é•œï¼Œsizeè¶Šå¤§ï¼Œæ‰“ç è¶Šæ¨¡ç³Š
+Mat SculptureFilter(Mat src);								//æµ®é›•æ»¤é•œ
+Mat DiffusionFilter(Mat src);								//æ‰©æ•£ï¼ˆæ¯›ç»ç’ƒï¼‰æ»¤é•œ
+Mat WindFilter(Mat src, int strength);						//é£æ»¤é•œï¼Œstrengthä¸ºé£çš„å¼ºåº¦ï¼Œå¼ºåº¦è¶Šå¤§ï¼Œæ•ˆæœè¶Šæ˜æ˜¾

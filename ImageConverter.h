@@ -1,16 +1,13 @@
 #ifndef _IMAGE_CONVERTER_H
 #define _IMAGE_CONVERTER_H
 #include <QImage>
-
-namespace cv {
-	class Mat;
-}
+#include "MAT.h"
 
 
 class ImageConverter {
-
-	using MAT = cv::Mat*;
+	
 	static cv::Mat& parseMAT(MAT Mat);
+	static MAT packMAT(cv::Mat mat);
 public:
 	//ATTENTION: This function does shallow copy.
 	static QImage MatToQImage(MAT Mat);

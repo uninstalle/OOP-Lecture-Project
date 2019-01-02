@@ -18,7 +18,6 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 protected:
-	QImage Image;
     void paintEvent(QPaintEvent *);
 private:
     Ui::MainWindow *ui;

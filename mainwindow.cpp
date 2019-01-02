@@ -3,19 +3,29 @@
 #include <QPainter>
 #include "ImageConverter.h"
 #include "ImageProcess.h"
+#include "iostream"
 
+ImageProcess newProcessor;
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
 	ui(new Ui::MainWindow)
 {
-	//这是一个例程，展示了GUI端没有包含OpenCV头文件情况下的使用方法。
-	//请注意image是本地变量，因此需要使用QImageCopyToMat进行深复制
-	//否则该函数结束时，image的data即被析构。
-	//为什么不试试把QImageCopyToMat改成QImageToMat会发生什么呢？
-	auto image = QImage("2chtex.png");
-	Image = ImageConverter::MatToQImage(
-		ImageProcess::generate3ChannelsNormalTexture(
-			ImageConverter::QImageCopyToMat(image)));
+	auto image = new QImage("1.jpg");
+	auto image2 = new QImage("2.jpg");
+	auto image3 = new QImage("3.jpg");
+	newProcessor.Layers.addLayerAsTop(ImageConverter::QImageToMat(*image));
+	newProcessor.Layers.addLayerAsTop(ImageConverter::QImageToMat(*image2));
+	newProcessor.Layers.addLayerAsBottom(ImageConverter::QImageToMat(*image3));
+	newProcessor.Layers.moveLayerUp(newProcessor.Layers[1]);
+	newProcessor.Layers.moveLayerUp(newProcessor.Layers[1]);
+	//newProcessor.deleteLayer(newProcessor.Layers.at(1));
+	ImageProcess::Sculpture(newProcessor, newProcessor.Layers.front());
+	newProcessor.Layers.mergeLayers(newProcessor.Layers[0], newProcessor.Layers[1], 0.5);
+	newProcessor.Layers.mergeLayers(newProcessor.Layers[0], newProcessor.Layers[1], 0.5);
+	ImageProcess::AdjustContrastAndBrightness(newProcessor, newProcessor.Layers.front(), 0.5, 0);
+	ImageProcess::GaussianBlur(newProcessor, newProcessor.Layers.front(), 1.0);
+	//newProcessor.revertChange();
+
 	ui->setupUi(this);
 }
 
@@ -27,7 +37,18 @@ MainWindow::~MainWindow()
 void MainWindow::paintEvent(QPaintEvent *)
 {
 	QPainter painter(this);
-	painter.drawImage(QRect{0,0,this->width(),this->height()},Image);
+	for (auto it = newProcessor.Layers.rbegin(); it != newProcessor.Layers.rend(); ++it)
+	{
+		QPoint topLeft(it->getTopLeftPoint().first, it->getTopLeftPoint().second);
+		QPoint bottomRight(it->getBottomRightPoint().first, it->getBottomRightPoint().second);
+		if (bottomRight.x() == 0 && bottomRight.y() == 0)
+		{
+			bottomRight.setX(this->width());
+			bottomRight.setY(this->height());
+		}
+		QRect drawArea(topLeft,bottomRight);
+		painter.drawImage(drawArea, ImageConverter::MatToQImage(it->getMat()));
+	}
 
 }
 
