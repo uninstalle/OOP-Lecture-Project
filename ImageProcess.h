@@ -10,16 +10,17 @@ class Layer
 private:
 	MAT value;
 	unsigned ID;
-	//ÀûÓÃ×óÉÏµãºÍÓÒÏÂµã±ê¼ÇÍ¼²ãµÄ´óĞ¡.Í¼²ã´óĞ¡Ö»Ó°Ïì»æÖÆÊ±µÄ´óĞ¡,²»Ó°Ïì¸ÃÍ¼²ãµÄvalueµÄ¾ØÕó³ß´ç
+	//åˆ©ç”¨å·¦ä¸Šç‚¹å’Œå³ä¸‹ç‚¹æ ‡è®°å›¾å±‚çš„å¤§å°.å›¾å±‚å¤§å°åªå½±å“ç»˜åˆ¶æ—¶çš„å¤§å°,ä¸å½±å“è¯¥å›¾å±‚çš„valueçš„çŸ©é˜µå°ºå¯¸
 	std::pair<int, int> topLeftPoint, bottomRightPoint;
-	//Í¼²ãµÄÊôĞÔ
+
+	//å›¾å±‚çš„å±æ€§
 	unsigned property = 0;
 
 	enum LayerProperty
 	{
-		DRAW = 0x1, //ĞèÒª»æÖÆ
-		RASTERIZED = 0x2, //¹âÕ¤»¯
-		PRIMITIVE = 0x4 //º¬ÓĞÍ¼Ôª
+		DRAW = 0x1, //éœ€è¦ç»˜åˆ¶
+		RASTERIZED = 0x2, //å…‰æ …åŒ–
+		PRIMITIVE = 0x4 //å«æœ‰å›¾å…ƒ
 	};
 	using layer_enum = unsigned;
 
@@ -54,7 +55,7 @@ private:
 	std::deque<Layer> layers;
 	int layerLevel = 0;
 	auto findLayerByID(unsigned layerID)->std::deque<Layer>::iterator;
-	//TODO Í¼²ãµÄÊôĞÔ
+	//TODO å›¾å±‚çš„å±æ€§
 public:
 	LayerStorage() = default;
 	int getLayerLevel() const { return layerLevel; }
@@ -78,10 +79,11 @@ public:
 	void setLayerSizeAsImageSize(int index);
 	void setLayerSizeAsImageSize(Layer &layer);
 	void setLayerSizeAsImageSizeByID(unsigned layerID);
-	//alpha( [0,1] )ÊÇfrontÍ¼²ãµÄÈ¨ÖØ
+	//alpha( [0,1] )æ˜¯frontå›¾å±‚çš„æƒé‡
 	void mergeLayers(int frontIndex, int backIndex, double blendAlpha);
 	void mergeLayers(Layer &frontLayer, Layer &backLayer, double blendAlpha);
 	void mergeLayersByID(unsigned frontLayerID, unsigned backLayerID, double blendAlpha);
+	
 
 
 	Layer& front() { return layers.front(); }
@@ -122,23 +124,30 @@ class ImageProcess
 {
 
 
-	//±£´æMAX_TRACES¸ömat,ÓÃÓÚ³·Ïú
+	//ä¿å­˜MAX_TRACESä¸ªmat,ç”¨äºæ’¤é”€
 	TraceStack Traces;
 public:
 
-	//TODO:Ö§³Ö¶à¸öÑ¡ÔñÇøÓò
+	//TODO:æ”¯æŒå¤šä¸ªé€‰æ‹©åŒºåŸŸ
 	//std::vector<ImagePartial> SelectedParts;
 
 	LayerStorage Layers;
 
-	//³·ÏúÉÏÒ»´ÎµÄĞŞ¸Ä
+	//æ’¤é”€ä¸Šä¸€æ¬¡çš„ä¿®æ”¹
 	void revertChange();
 
 
 	static void AdjustContrastAndBrightness(ImageProcess &process, Layer &layer, double contrast, double brightness);
 	static void GammaCorrection(ImageProcess &process, Layer &layer, double gamma);
 	static void GaussianBlur(ImageProcess &process, Layer &layer, double strength);
-	static void Sculpture(ImageProcess &process, Layer &layer);
+	static void Sculpture(ImageProcess &process, Layer &layer);									//æµ®é›•
+	static void NostalgicHue(ImageProcess &process, Layer &layer);								//æ€€æ—§
+	static void StrongLight(ImageProcess &process, Layer &layer);								//å¼ºå…‰
+	static void DarkTown(ImageProcess &process, Layer &layer, double DarkDegree);				//æš—è°ƒ
+	static void Feather(ImageProcess &process, Layer &layer, double VagueRatio);				//ç¾½åŒ–
+	static void Mosaic(ImageProcess &process, Layer &layer, int size);							//é©¬èµ›å…‹
+	static void Diffusion(ImageProcess &process, Layer &layer);									//æ‰©æ•£ï¼ˆæ¯›ç»ç’ƒï¼‰
+	static void Wind(ImageProcess &process, Layer &layer, int strength);						//é£
 };
 
 #endif

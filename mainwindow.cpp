@@ -3,7 +3,6 @@
 #include <QPainter>
 #include "ImageConverter.h"
 #include "ImageProcess.h"
-#include "iostream"
 
 ImageProcess newProcessor;
 MainWindow::MainWindow(QWidget *parent) :
