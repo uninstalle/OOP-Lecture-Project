@@ -45,10 +45,8 @@ void MainWindow::paintEvent(QPaintEvent *)
 			bottomRight.setX(this->width());
 			bottomRight.setY(this->height());
 		}
-		QRect drawArea(topLeft,bottomRight);
+		QRect drawArea(topLeft, bottomRight);
 		painter.drawImage(drawArea, ImageConverter::MatToQImage(it->getMat()));
 	}
 
 }
-
-
