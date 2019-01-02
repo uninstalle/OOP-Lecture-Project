@@ -23,7 +23,7 @@ void ImageProcess::revertChange()
 	std::for_each(Layers.begin(), Layers.end(),
 		[t](Layer &layer) { if (t.traceLayerID == layer.getID()) layer.setMat(t.traceValue); });
 	Traces.pop();
-	//TODO ÊµÏÖ»Ö¸´ÒÑÉ¾³ıµÄÍ¼²ã
+	//TODO å®ç°æ¢å¤å·²åˆ é™¤çš„å›¾å±‚
 }
 
 Layer::Layer(const MAT value) :value(value), ID(++ID_dispatcher)
@@ -163,6 +163,36 @@ void LayerStorage::moveLayerTo(Layer& layer, Layer& targetLayer)
 	moveLayerToByID(layer.getID(), targetLayer.getID());
 }
 
+void ImageProcess::NostalgicHue(ImageProcess& process, Layer &layer)
+{
+	Mat dst;
+	process.Traces.push(layer.getMat(), layer.getID());
+	try {
+		dst = NostalgicHueFilter(parseMAT(layer.getMat()));
+	}
+	catch (const process_error& e) {
+		if (e.get_error_code() == FilterChannelsError) {
+			throw FilterChannelsError;
+		}
+	}
+	auto DST = packMAT(dst);
+	layer.setMat(DST);
+}
+
+void ImageProcess::Sculpture(ImageProcess& process, Layer &layer)
+{
+	Mat dst;
+	process.Traces.push(layer.getMat(), layer.getID());
+	try {
+		auto mat = parseMAT(layer.getMat());
+		dst = SculptureFilter(mat);
+	}
+	catch (const process_error& e) {
+		if (e.get_error_code() == FilterChannelsError) {
+			throw FilterChannelsError;
+		}
+	}
+  
 void LayerStorage::moveLayerToByID(unsigned layerID, unsigned targetLayerID)
 {
 	auto it = findLayerByID(layerID);
@@ -217,8 +247,8 @@ bool isPointInImage(std::pair<int, int> point, Layer &layer)
 
 auto getOverlapRelation(Layer &layer1, Layer &layer2)->std::pair<std::pair<int, int>, std::pair<int, int>>
 {
-	//¸Ãº¯Êı¼ì²élayer1ºÍlayer2µÄ¹ØÏµ.
-	//¸ù¾İlayer1µÄËÄµãÊÇ·ñÔÚlayer2ÄÚ,¼ÆËãlayer1ºÍlayer2µÄÖØµş·¶Î§
+	//è¯¥å‡½æ•°æ£€æŸ¥layer1å’Œlayer2çš„å…³ç³».
+	//æ ¹æ®layer1çš„å››ç‚¹æ˜¯å¦åœ¨layer2å†…,è®¡ç®—layer1å’Œlayer2çš„é‡å èŒƒå›´
 	std::pair<int, int> overlapTopLeftPoint, overlapBottomRightPoint;
 
 	enum
@@ -323,9 +353,9 @@ auto getOverlapArea(Layer &layer1, Layer &layer2)
 	if (r.first != std::pair<int, int>(0, 0)
 		|| r.second != std::pair<int, int>(0, 0))
 		return r;
-	//Èç¹û1->2µÄ¹ØÏµÎªNone,²¢²»ÒâÎ¶×ÅÁ½¸öÍ¼²ãÒ»¶¨²»Ïà½»
-	//ÓĞ¿ÉÄÜÊÇ1µÄ¶¥µã²»ÔÚ2ÄÚ,µ«ÊÇ2µÄ¶¥µãÔÚ1ÄÚ
-	//Òò´ËĞèÒª¼ì²é2->1µÄ¹ØÏµ
+	//å¦‚æœ1->2çš„å…³ç³»ä¸ºNone,å¹¶ä¸æ„å‘³ç€ä¸¤ä¸ªå›¾å±‚ä¸€å®šä¸ç›¸äº¤
+	//æœ‰å¯èƒ½æ˜¯1çš„é¡¶ç‚¹ä¸åœ¨2å†…,ä½†æ˜¯2çš„é¡¶ç‚¹åœ¨1å†…
+	//å› æ­¤éœ€è¦æ£€æŸ¥2->1çš„å…³ç³»
 	r = getOverlapRelation(layer2, layer1);
 
 	return r;
@@ -335,10 +365,10 @@ void LayerStorage::mergeLayers(Layer& frontLayer, Layer& backLayer, double blend
 {
 	auto frontMat = *frontLayer.getMat().mat;
 	auto backMat = *backLayer.getMat().mat;
-	//ÇóÁ½¸öÍ¼ÏñµÄÖØµş·¶Î§
+	//æ±‚ä¸¤ä¸ªå›¾åƒçš„é‡å èŒƒå›´
 	auto overlap = getOverlapArea(frontLayer, backLayer);
 
-	//¹¹Ôì¿ÉÒÔÈİÏÂÁ½¸öÍ¼ÏñµÄĞÂÍ¼Ïñ
+	//æ„é€ å¯ä»¥å®¹ä¸‹ä¸¤ä¸ªå›¾åƒçš„æ–°å›¾åƒ
 	std::pair<int, int> newTopLeft, newBottomRight;
 	newTopLeft.first = std::min(frontLayer.getTopLeftPoint().first, backLayer.getTopLeftPoint().first);
 	newTopLeft.second = std::min(frontLayer.getTopLeftPoint().second, backLayer.getTopLeftPoint().second);
@@ -347,11 +377,11 @@ void LayerStorage::mergeLayers(Layer& frontLayer, Layer& backLayer, double blend
 
 	int newWidth = newBottomRight.first - newTopLeft.first,
 		newHeight = newBottomRight.second - newTopLeft.second;
-	//todo ´Ë´¦µÄtypeÖ±½ÓÊ¹ÓÃÁËfrontmatµÄtype,Êµ¼ÊÉÏÓ¦¸ÃÊ¹ÓÃ¿É¼æÈİfrontmatºÍbackmatµÄtype
+	//todo æ­¤å¤„çš„typeç›´æ¥ä½¿ç”¨äº†frontmatçš„type,å®é™…ä¸Šåº”è¯¥ä½¿ç”¨å¯å…¼å®¹frontmatå’Œbackmatçš„type
 	cv::Mat newMat(newHeight, newWidth, frontMat.type());
 	Layer newLayer(packMAT(newMat), newTopLeft.first, newTopLeft.second, newBottomRight.first, newBottomRight.second);
 
-	//¹¹ÔìĞÂÍ¼ÏñÖĞÁ½¸ö¾ÉÍ¼ÏñµÄROI
+	//æ„é€ æ–°å›¾åƒä¸­ä¸¤ä¸ªæ—§å›¾åƒçš„ROI
 	cv::Rect newFrontArea(frontLayer.getTopLeftPoint().first - newTopLeft.first,
 		frontLayer.getTopLeftPoint().second - newTopLeft.second,
 		frontLayer.getBottomRightPoint().first - frontLayer.getTopLeftPoint().first,
@@ -364,10 +394,10 @@ void LayerStorage::mergeLayers(Layer& frontLayer, Layer& backLayer, double blend
 	auto frontROI = newMat(newFrontArea);
 	auto backROI = newMat(newBackArea);
 
-	//Èç¹ûÁ½¸öÍ¼ÏñÓĞÖØµş²¿·Ö,Ôò¹¹ÔìÁ½¸ö¾ÉÍ¼ÏñÖĞÖØµşÎ»ÖÃµÄROI,²¢Íê³É»ìºÏ
+	//å¦‚æœä¸¤ä¸ªå›¾åƒæœ‰é‡å éƒ¨åˆ†,åˆ™æ„é€ ä¸¤ä¸ªæ—§å›¾åƒä¸­é‡å ä½ç½®çš„ROI,å¹¶å®Œæˆæ··åˆ
 	if (overlap.first != overlap.second)
 	{
-		//¹¹ÔìROI
+		//æ„é€ ROI
 		cv::Rect frontOverlapArea(overlap.first.first - frontLayer.getTopLeftPoint().first,
 			overlap.first.second - frontLayer.getTopLeftPoint().second,
 			overlap.second.first - overlap.first.first,
@@ -381,17 +411,17 @@ void LayerStorage::mergeLayers(Layer& frontLayer, Layer& backLayer, double blend
 		auto frontBlendROI = frontMat(frontOverlapArea);
 		auto backBlendROI = backMat(backOverlapArea);
 
-		//½«ÖØµşÎ»ÖÃµÄ»ìºÏ½á¹û´æ·ÅÔÚfrongLayerÖĞ
+		//å°†é‡å ä½ç½®çš„æ··åˆç»“æœå­˜æ”¾åœ¨frongLayerä¸­
 		cv::addWeighted(frontBlendROI, blendAlpha,
 			backBlendROI, 1 - blendAlpha,
 			0.0, frontBlendROI);
 	}
 
-	//½«½á¹û¸´ÖÆµ½ĞÂÍ¼²ãÉÏ
+	//å°†ç»“æœå¤åˆ¶åˆ°æ–°å›¾å±‚ä¸Š
 	cv::addWeighted(backROI, 0.0, backMat, 1.0, 0.0, backROI);
 	cv::addWeighted(frontROI, 0.0, frontMat, 1.0, 0.0, frontROI);
 
-	//ÇåÀíÍ¼²ã
+	//æ¸…ç†å›¾å±‚
 	deleteLayer(frontLayer);
 	deleteLayer(backLayer);
 
@@ -437,27 +467,121 @@ void ImageProcess::GaussianBlur(ImageProcess &process, Layer &layer, double stre
 {
 	auto mat = parseMAT(layer.getMat());
 
-	//ĞŞ¸ÄÇ°´æ´¢¸ÃÍ¼²ãµÄÔ­Í¼Ïñ,×÷Îª³·Ïú²Ù×÷µÄ±¸·İ
+	//ä¿®æ”¹å‰å­˜å‚¨è¯¥å›¾å±‚çš„åŸå›¾åƒ,ä½œä¸ºæ’¤é”€æ“ä½œçš„å¤‡ä»½
 	process.Traces.push(layer.getMat(), layer.getID());
 
 	cv::Mat dst;
-	//¶Ôstrength×öÏßĞÔ²åÖµ
+	//å¯¹strengthåšçº¿æ€§æ’å€¼
 	int size = 3 + strength * (std::min(mat.rows, mat.cols) / 10.0 - 3);
-	//kernel±ØĞëÊÇÆæÊı³ß´ç
+	//kernelå¿…é¡»æ˜¯å¥‡æ•°å°ºå¯¸
 	if (size % 2 == 0) ++size;
 	cv::Size kernel_size(size, size);
 
-	//×Ô¼º±àĞ´µÄ´¦Àíº¯ÊıµÄ²ÎÊıÁĞ±íÒªÀàËÆcv¿âÖĞº¯ÊıµÄĞ´·¨(ÈçÏÂGaussianBlur)
+	//è‡ªå·±ç¼–å†™çš„å¤„ç†å‡½æ•°çš„å‚æ•°åˆ—è¡¨è¦ç±»ä¼¼cvåº“ä¸­å‡½æ•°çš„å†™æ³•(å¦‚ä¸‹GaussianBlur)
 	cv::GaussianBlur(mat, dst, kernel_size, 0);
 
 	MAT DST = packMAT(dst);
 	layer.setMat(DST);
 }
 
-void ImageProcess::Sculpture(ImageProcess& process, Layer &layer)
+void ImageProcess::StrongLight(ImageProcess& process, Layer &layer)
 {
+	Mat dst;
 	process.Traces.push(layer.getMat(), layer.getID());
-	auto dst = SculptureFilter(parseMAT(layer.getMat()));
+	try {
+		auto mat = parseMAT(layer.getMat());
+		dst = StrongLightFilter(mat);
+	}
+	catch (const process_error& e) {
+		if (e.get_error_code() == FilterChannelsError) {
+			throw FilterChannelsError;
+		}
+	}
+	auto DST = packMAT(dst);
+	layer.setMat(DST);
+}
+
+void ImageProcess::Feather(ImageProcess& process, Layer &layer, double VagueRatio)
+{
+	Mat dst;
+	process.Traces.push(layer.getMat(), layer.getID());
+	try {
+		auto mat = parseMAT(layer.getMat());
+		dst = FeatherFilter(mat, VagueRatio);
+	}
+	catch (const process_error& e) {
+		if (e.get_error_code() == FilterChannelsError) {
+			throw FilterChannelsError;
+		}
+	}
+	auto DST = packMAT(dst);
+	layer.setMat(DST);
+}
+
+void ImageProcess::DarkTown(ImageProcess& process, Layer &layer, double DarkDegree)
+{
+	Mat dst;
+	process.Traces.push(layer.getMat(), layer.getID());
+	try {
+		auto mat = parseMAT(layer.getMat());
+		dst = DarkTownFilter(mat, DarkDegree);
+	}
+	catch (const process_error& e) {
+		if (e.get_error_code() == FilterChannelsError) {
+			throw FilterChannelsError;
+		}
+	}
+	auto DST = packMAT(dst);
+	layer.setMat(DST);
+}
+
+void ImageProcess::Mosaic(ImageProcess& process, Layer &layer, int size)
+{
+	Mat dst;
+	process.Traces.push(layer.getMat(), layer.getID());
+	try {
+		auto mat = parseMAT(layer.getMat());
+		dst = MosaicFilter(mat, size);
+	}
+	catch (const process_error& e) {
+		if (e.get_error_code() == FilterChannelsError) {
+			throw FilterChannelsError;
+		}
+	}
+	auto DST = packMAT(dst);
+	layer.setMat(DST);
+}
+
+void ImageProcess::Diffusion(ImageProcess& process, Layer &layer)
+{
+	Mat dst;
+	process.Traces.push(layer.getMat(), layer.getID());
+	try {
+		auto mat = parseMAT(layer.getMat());
+		dst = DiffusionFilter(mat);
+	}
+	catch (const process_error& e) {
+		if (e.get_error_code() == FilterChannelsError) {
+			throw FilterChannelsError;
+		}
+	}
+	auto DST = packMAT(dst);
+	layer.setMat(DST);
+}
+
+void ImageProcess::Wind(ImageProcess& process, Layer &layer, int strength)
+{
+	Mat dst;
+	process.Traces.push(layer.getMat(), layer.getID());
+	try {
+		auto mat = parseMAT(layer.getMat());
+		dst = WindFilter(mat, strength);
+	}
+	catch (const process_error& e) {
+		if (e.get_error_code() == FilterChannelsError) {
+			throw FilterChannelsError;
+		}
+	}
 	auto DST = packMAT(dst);
 	layer.setMat(DST);
 }
