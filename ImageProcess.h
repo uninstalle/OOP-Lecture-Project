@@ -1,4 +1,3 @@
-
 #ifndef _IMAGE_PROCESS_H
 #define _IMAGE_PROCESS_H
 #include <deque>

@@ -192,7 +192,7 @@ void ImageProcess::Sculpture(ImageProcess& process, Layer &layer)
 			throw FilterChannelsError;
 		}
 	}
-  
+}
 void LayerStorage::moveLayerToByID(unsigned layerID, unsigned targetLayerID)
 {
 	auto it = findLayerByID(layerID);

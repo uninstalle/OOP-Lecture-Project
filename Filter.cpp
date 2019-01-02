@@ -39,7 +39,7 @@ Mat NostalgicHueFilter(Mat src) {
 	else {
 		throw process_error(FilterChannelsError, "This filter does not support the number of the channels of the picture.");
 	}
-	
+
 }
 
 Mat StrongLightFilter(Mat src) {
@@ -104,7 +104,7 @@ Mat DarkTownFilter(Mat src, double DarkDegree) {
 	else {
 		throw process_error(FilterChannelsError, "This filter does not support the number of the channels of the picture.");
 	}
-	
+
 }
 
 Mat FeatherFilter(Mat src, double VagueRatio) {
@@ -153,13 +153,12 @@ Mat FeatherFilter(Mat src, double VagueRatio) {
 	else {
 		throw process_error(FilterChannelsError, "This filter does not support the number of the channels of the picture.");
 	}
-	
+
 }
 
 Mat MosaicFilter(Mat src, int size) {
 	int height = src.rows;
 	int width = src.cols;
-	double temp;
 	int mUpper, nUpper;
 	Mat NewSrc;
 	src.copyTo(NewSrc);
@@ -183,7 +182,7 @@ Mat MosaicFilter(Mat src, int size) {
 				else nUpper = x + size;
 
 				for (int m = y; m < mUpper; m++) {
-					
+
 					uchar *Q = NewSrc.ptr<uchar>(m);
 					for (int n = x; n < nUpper; n++) {
 
@@ -199,7 +198,7 @@ Mat MosaicFilter(Mat src, int size) {
 	else {
 		throw process_error(FilterChannelsError, "This filter does not support the number of the channels of the picture.");
 	}
-	
+
 }
 
 Mat SculptureFilter(Mat src) {
@@ -209,7 +208,7 @@ Mat SculptureFilter(Mat src) {
 	int height = src.rows;
 	int width = src.cols;
 	int Channels = src.channels();
-	
+
 	if (Channels >= 3 && Channels <= 4) {
 		int flag = (Channels >= 3) ? 3 : Channels;
 		for (int y = 1; y < height - 1; y++) {
@@ -230,7 +229,7 @@ Mat SculptureFilter(Mat src) {
 	else {
 		throw process_error(FilterChannelsError, "This filter does not support the number of the channels of the picture.");
 	}
-	
+
 }
 
 Mat DiffusionFilter(Mat src) {
@@ -271,7 +270,7 @@ Mat WindFilter(Mat src, int strength) {
 	int width = src.cols;
 	cv::RNG rng;
 	int Channels = src.channels();
-	int density = strength /2 + strength * 2;
+	int density = strength / 2 + strength * 2;
 	int length = 2 * strength - strength / 2;
 
 	density < 2 ? 2 : density;
@@ -297,6 +296,6 @@ Mat WindFilter(Mat src, int strength) {
 	else {
 		throw process_error(FilterChannelsError, "This filter does not support the number of the channels of the picture.");
 	}
-	
+
 
 }
