@@ -11,18 +11,16 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 	auto image = new QImage("1.jpg");
 	auto image2 = new QImage("2.jpg");
-	auto image3 = new QImage("3.jpg");
+	auto image3 = new QImage("png.png");
 	newProcessor.Layers.addLayerAsTop(ImageConverter::QImageToMat(*image));
 	newProcessor.Layers.addLayerAsTop(ImageConverter::QImageToMat(*image2));
-	newProcessor.Layers.addLayerAsBottom(ImageConverter::QImageToMat(*image3));
-	newProcessor.Layers.moveLayerUp(newProcessor.Layers[1]);
-	newProcessor.Layers.moveLayerUp(newProcessor.Layers[1]);
+	newProcessor.Layers.addLayerAsTop(ImageConverter::QImageToMat(*image3));
 	//newProcessor.deleteLayer(newProcessor.Layers.at(1));
-	ImageProcess::Sculpture(newProcessor, newProcessor.Layers.front());
-	newProcessor.Layers.mergeLayers(newProcessor.Layers[0], newProcessor.Layers[1], 0.5);
-	newProcessor.Layers.mergeLayers(newProcessor.Layers[0], newProcessor.Layers[1], 0.5);
-	ImageProcess::AdjustContrastAndBrightness(newProcessor, newProcessor.Layers.front(), 0.5, 0);
-	ImageProcess::GaussianBlur(newProcessor, newProcessor.Layers.front(), 1.0);
+	//ImageProcess::Sculpture(newProcessor, newProcessor.Layers.front());
+	//newProcessor.Layers.mergeLayers(newProcessor.Layers[0], newProcessor.Layers[1], 1);
+	newProcessor.Layers.mergeLayers(newProcessor.Layers[0], newProcessor.Layers[1], 0.1);
+	//ImageProcess::AdjustContrastAndBrightness(newProcessor, newProcessor.Layers.front(), 0.5, 0);
+	//ImageProcess::GaussianBlur(newProcessor, newProcessor.Layers.front(), 1.0);
 	//newProcessor.revertChange();
 
 	ui->setupUi(this);

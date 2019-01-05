@@ -5,6 +5,7 @@
 #include "MAT.h"
 
 
+
 class Layer
 {
 private:
@@ -12,6 +13,7 @@ private:
 	unsigned ID;
 	//利用左上点和右下点标记图层的大小.图层大小只影响绘制时的大小,不影响该图层的value的矩阵尺寸
 	std::pair<int, int> topLeftPoint, bottomRightPoint;
+
 
 	//图层的属性
 	unsigned property = 0;
@@ -49,6 +51,7 @@ public:
 	virtual ~Layer() = default;
 };
 
+
 class LayerStorage
 {
 private:
@@ -83,7 +86,7 @@ public:
 	void mergeLayers(int frontIndex, int backIndex, double blendAlpha);
 	void mergeLayers(Layer &frontLayer, Layer &backLayer, double blendAlpha);
 	void mergeLayersByID(unsigned frontLayerID, unsigned backLayerID, double blendAlpha);
-	
+	Layer& findLayer(unsigned ID);
 
 
 	Layer& front() { return layers.front(); }

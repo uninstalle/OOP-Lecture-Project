@@ -188,18 +188,22 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Filter.cpp" />
+    <ClCompile Include="GeomTrans.cpp" />
     <ClCompile Include="ImageConverter.cpp" />
     <ClCompile Include="ImageProcess.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mainwindow.cpp" />
     <ClCompile Include="MAT.cpp" />
     <ClCompile Include="process_exception.cpp" />
+    <ClCompile Include="局部处理.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="mainwindow.h">
     </QtMoc>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GeomTrans.h" />
+    <ClInclude Include="局部处理.h" />
     <CustomBuild Include="debug\moc_predefs.h.cbt">
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>

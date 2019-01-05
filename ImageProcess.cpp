@@ -163,36 +163,6 @@ void LayerStorage::moveLayerTo(Layer& layer, Layer& targetLayer)
 	moveLayerToByID(layer.getID(), targetLayer.getID());
 }
 
-void ImageProcess::NostalgicHue(ImageProcess& process, Layer &layer)
-{
-	Mat dst;
-	process.Traces.push(layer.getMat(), layer.getID());
-	try {
-		dst = NostalgicHueFilter(parseMAT(layer.getMat()));
-	}
-	catch (const process_error& e) {
-		if (e.get_error_code() == FilterChannelsError) {
-			throw FilterChannelsError;
-		}
-	}
-	auto DST = packMAT(dst);
-	layer.setMat(DST);
-}
-
-void ImageProcess::Sculpture(ImageProcess& process, Layer &layer)
-{
-	Mat dst;
-	process.Traces.push(layer.getMat(), layer.getID());
-	try {
-		auto mat = parseMAT(layer.getMat());
-		dst = SculptureFilter(mat);
-	}
-	catch (const process_error& e) {
-		if (e.get_error_code() == FilterChannelsError) {
-			throw FilterChannelsError;
-		}
-	}
-}
 void LayerStorage::moveLayerToByID(unsigned layerID, unsigned targetLayerID)
 {
 	auto it = findLayerByID(layerID);
@@ -436,6 +406,15 @@ void LayerStorage::mergeLayersByID(unsigned frontLayerID, unsigned backLayerID, 
 	mergeLayers(*frontLayerIt, *backLayerIt, blendAlpha);
 }
 
+Layer& LayerStorage::findLayer(unsigned ID)
+{
+	auto it = std::find_if(layers.begin(), layers.end(), [ID](Layer &L) { return L.getID() == ID; });
+	if (it == layers.end())
+		throw std::runtime_error("Layer not found.");
+	return *it;
+}
+
+
 void ImageProcess::AdjustContrastAndBrightness(ImageProcess& process, Layer& layer, double contrast, double brightness)
 {
 	auto mat = parseMAT(layer.getMat());
@@ -484,6 +463,38 @@ void ImageProcess::GaussianBlur(ImageProcess &process, Layer &layer, double stre
 	layer.setMat(DST);
 }
 
+void ImageProcess::NostalgicHue(ImageProcess& process, Layer &layer)
+{
+	Mat dst;
+	process.Traces.push(layer.getMat(), layer.getID());
+	try {
+		dst = NostalgicHueFilter(parseMAT(layer.getMat()));
+	}
+	catch (const process_error& e) {
+		if (e.get_error_code() == FilterChannelsError) {
+			throw FilterChannelsError;
+		}
+	}
+	auto DST = packMAT(dst);
+	layer.setMat(DST);
+}
+
+void ImageProcess::Sculpture(ImageProcess& process, Layer &layer)
+{
+	Mat dst;
+	process.Traces.push(layer.getMat(), layer.getID());
+	try {
+		auto mat = parseMAT(layer.getMat());
+		dst = SculptureFilter(mat);
+	}
+	catch (const process_error& e) {
+		if (e.get_error_code() == FilterChannelsError) {
+			throw FilterChannelsError;
+		}
+	}
+	auto DST = packMAT(dst);
+	layer.setMat(DST);
+}
 void ImageProcess::StrongLight(ImageProcess& process, Layer &layer)
 {
 	Mat dst;

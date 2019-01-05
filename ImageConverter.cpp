@@ -51,7 +51,7 @@ QImage ImageConverter::MatToQImage(MAT Mat)
 	//8 bits, 4 channels
 	case CV_8UC4:
 	{
-		QImage image(mat.data, mat.cols, mat.rows, mat.step, QImage::Format_RGB32);
+		QImage image(mat.data, mat.cols, mat.rows, mat.step, QImage::Format_ARGB32);
 		return image;
 	}
 
