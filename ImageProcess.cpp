@@ -3,6 +3,12 @@
 #include "Filter.h"
 
 int Layer::ID_dispatcher = 0;
+double penParameter::B = 0.0;
+double penParameter::G = 0.0;
+double penParameter::R = 0.0;
+int penParameter::size = 2;
+double penParameter::scale = 1;
+FondFace penParameter::face = CV_FONT_HERSHEY_SIMPLEX;
 
 void TraceStack::push(MAT changedMat, unsigned layerID)
 {
@@ -14,7 +20,7 @@ void TraceStack::push(MAT changedMat, unsigned layerID)
 
 Trace TraceStack::top()
 {
-	return traces.back();
+	return traces.front();
 }
 
 void ImageProcess::revertChange()
@@ -23,7 +29,7 @@ void ImageProcess::revertChange()
 	std::for_each(Layers.begin(), Layers.end(),
 		[t](Layer &layer) { if (t.traceLayerID == layer.getID()) layer.setMat(t.traceValue); });
 	Traces.pop();
-	//TODO å®ç°æ¢å¤å·²åˆ é™¤çš„å›¾å±‚
+	//TODO ÊµÏÖ»Ö¸´ÒÑÉ¾³ıµÄÍ¼²ã
 }
 
 Layer::Layer(const MAT value) :value(value), ID(++ID_dispatcher)
@@ -32,6 +38,44 @@ Layer::Layer(const MAT value) :value(value), ID(++ID_dispatcher)
 	bottomRightPoint = { value.mat->cols,value.mat->rows };
 }
 
+Layer::Layer(ElementType e, int leftUpX, int leftUpY, int rightDownX, int rightDownY)
+	:attachment(e, penParameter::getPenSize(), penParameter::getPenColorB(), penParameter::getPenColorG(), penParameter::getPenColorR())
+{
+	ID = ++ID_dispatcher;
+	topLeftPoint = { leftUpX, leftUpY };
+	bottomRightPoint = { rightDownX, rightDownY };
+	property = DRAW | PRIMITIVE;
+}
+
+Layer::Layer(std::string s, int x, int y)
+	:attachment(s, penParameter::getPenColorB(), penParameter::getPenColorG(), penParameter::getPenColorR()
+		, penParameter::getPenFace(), penParameter::getPenScale(), penParameter::getPenSize())
+{
+	ID = ++ID_dispatcher;
+	cv::Size text_size = cv::getTextSize(s, penParameter::getPenFace(), penParameter::getPenScale(),
+		(penParameter::getPenSize() >= 1 ? penParameter::getPenSize() : 1), 0);
+	topLeftPoint = { x, y - text_size.height };
+	bottomRightPoint = { x + text_size.width, y };
+	property = DRAW | TEXT;
+}
+
+MAT Layer::getMat() {
+	if (checkProperty(RASTERIZED)) {
+		;
+	}
+	else if (checkProperty(PRIMITIVE)) {
+		ImageProcess::drawPrimitive(this->value, getLayerAttachment().gettype(), getTopLeftPoint().first, getTopLeftPoint().second,
+			getBottomRightPoint().first, getBottomRightPoint().second, getLayerAttachment().getPenSize(),
+			getLayerAttachment().getPenColorB(), getLayerAttachment().getPenColorG(), getLayerAttachment().getPenColorR());
+	}
+	else if (checkProperty(TEXT)) {
+		ImageProcess::drawText(this->value, getLayerAttachment().getText(), getTopLeftPoint().first, getTopLeftPoint().second,
+			getBottomRightPoint().first, getBottomRightPoint().second,
+			getLayerAttachment().getThickness(), getLayerAttachment().getScale(), getLayerAttachment().getFace(),
+			getLayerAttachment().getPenColorB(), getLayerAttachment().getPenColorG(), getLayerAttachment().getPenColorR());
+	}
+	return value;
+}
 
 auto LayerStorage::findLayerByID(unsigned layerID) -> std::deque<Layer>::iterator
 {
@@ -41,7 +85,6 @@ auto LayerStorage::findLayerByID(unsigned layerID) -> std::deque<Layer>::iterato
 			break;
 	return i;
 }
-
 
 void LayerStorage::addLayerAsTop(MAT Mat)
 {
@@ -54,7 +97,6 @@ void LayerStorage::addLayerAsTop(Layer& layer)
 	layers.push_front(layer);
 	layerLevel++;
 }
-
 
 void LayerStorage::addLayerAsBottom(MAT Mat)
 {
@@ -89,7 +131,6 @@ void LayerStorage::addLayerAfter(MAT Mat, Layer& layer)
 	layerLevel++;
 }
 
-
 void LayerStorage::deleteLayer(Layer& layer)
 {
 	deleteLayer(layer.getID());
@@ -103,7 +144,6 @@ void LayerStorage::deleteLayer(unsigned layerID)
 	layers.erase(it);
 	layerLevel--;
 }
-
 
 void LayerStorage::moveLayerUp(Layer& layer)
 {
@@ -127,7 +167,6 @@ void LayerStorage::moveLayerUp(int index)
 	auto itafter = it - 1;
 	std::swap(*it, *itafter);
 }
-
 
 void LayerStorage::moveLayerDown(Layer& layer)
 {
@@ -163,36 +202,6 @@ void LayerStorage::moveLayerTo(Layer& layer, Layer& targetLayer)
 	moveLayerToByID(layer.getID(), targetLayer.getID());
 }
 
-void ImageProcess::NostalgicHue(ImageProcess& process, Layer &layer)
-{
-	Mat dst;
-	process.Traces.push(layer.getMat(), layer.getID());
-	try {
-		dst = NostalgicHueFilter(parseMAT(layer.getMat()));
-	}
-	catch (const process_error& e) {
-		if (e.get_error_code() == FilterChannelsError) {
-			throw FilterChannelsError;
-		}
-	}
-	auto DST = packMAT(dst);
-	layer.setMat(DST);
-}
-
-void ImageProcess::Sculpture(ImageProcess& process, Layer &layer)
-{
-	Mat dst;
-	process.Traces.push(layer.getMat(), layer.getID());
-	try {
-		auto mat = parseMAT(layer.getMat());
-		dst = SculptureFilter(mat);
-	}
-	catch (const process_error& e) {
-		if (e.get_error_code() == FilterChannelsError) {
-			throw FilterChannelsError;
-		}
-	}
-  
 void LayerStorage::moveLayerToByID(unsigned layerID, unsigned targetLayerID)
 {
 	auto it = findLayerByID(layerID);
@@ -202,8 +211,6 @@ void LayerStorage::moveLayerToByID(unsigned layerID, unsigned targetLayerID)
 	layers.insert(targetIt, *it);
 	layers.erase(it);
 }
-
-
 
 void LayerStorage::setLayerSizeAsImageSize(int index)
 {
@@ -247,8 +254,8 @@ bool isPointInImage(std::pair<int, int> point, Layer &layer)
 
 auto getOverlapRelation(Layer &layer1, Layer &layer2)->std::pair<std::pair<int, int>, std::pair<int, int>>
 {
-	//è¯¥å‡½æ•°æ£€æŸ¥layer1å’Œlayer2çš„å…³ç³».
-	//æ ¹æ®layer1çš„å››ç‚¹æ˜¯å¦åœ¨layer2å†…,è®¡ç®—layer1å’Œlayer2çš„é‡å èŒƒå›´
+	//¸Ãº¯Êı¼ì²élayer1ºÍlayer2µÄ¹ØÏµ.
+	//¸ù¾İlayer1µÄËÄµãÊÇ·ñÔÚlayer2ÄÚ,¼ÆËãlayer1ºÍlayer2µÄÖØµş·¶Î§
 	std::pair<int, int> overlapTopLeftPoint, overlapBottomRightPoint;
 
 	enum
@@ -353,9 +360,9 @@ auto getOverlapArea(Layer &layer1, Layer &layer2)
 	if (r.first != std::pair<int, int>(0, 0)
 		|| r.second != std::pair<int, int>(0, 0))
 		return r;
-	//å¦‚æœ1->2çš„å…³ç³»ä¸ºNone,å¹¶ä¸æ„å‘³ç€ä¸¤ä¸ªå›¾å±‚ä¸€å®šä¸ç›¸äº¤
-	//æœ‰å¯èƒ½æ˜¯1çš„é¡¶ç‚¹ä¸åœ¨2å†…,ä½†æ˜¯2çš„é¡¶ç‚¹åœ¨1å†…
-	//å› æ­¤éœ€è¦æ£€æŸ¥2->1çš„å…³ç³»
+	//Èç¹û1->2µÄ¹ØÏµÎªNone,²¢²»ÒâÎ¶×ÅÁ½¸öÍ¼²ãÒ»¶¨²»Ïà½»
+	//ÓĞ¿ÉÄÜÊÇ1µÄ¶¥µã²»ÔÚ2ÄÚ,µ«ÊÇ2µÄ¶¥µãÔÚ1ÄÚ
+	//Òò´ËĞèÒª¼ì²é2->1µÄ¹ØÏµ
 	r = getOverlapRelation(layer2, layer1);
 
 	return r;
@@ -365,10 +372,10 @@ void LayerStorage::mergeLayers(Layer& frontLayer, Layer& backLayer, double blend
 {
 	auto frontMat = *frontLayer.getMat().mat;
 	auto backMat = *backLayer.getMat().mat;
-	//æ±‚ä¸¤ä¸ªå›¾åƒçš„é‡å èŒƒå›´
+	//ÇóÁ½¸öÍ¼ÏñµÄÖØµş·¶Î§
 	auto overlap = getOverlapArea(frontLayer, backLayer);
 
-	//æ„é€ å¯ä»¥å®¹ä¸‹ä¸¤ä¸ªå›¾åƒçš„æ–°å›¾åƒ
+	//¹¹Ôì¿ÉÒÔÈİÏÂÁ½¸öÍ¼ÏñµÄĞÂÍ¼Ïñ
 	std::pair<int, int> newTopLeft, newBottomRight;
 	newTopLeft.first = std::min(frontLayer.getTopLeftPoint().first, backLayer.getTopLeftPoint().first);
 	newTopLeft.second = std::min(frontLayer.getTopLeftPoint().second, backLayer.getTopLeftPoint().second);
@@ -377,11 +384,11 @@ void LayerStorage::mergeLayers(Layer& frontLayer, Layer& backLayer, double blend
 
 	int newWidth = newBottomRight.first - newTopLeft.first,
 		newHeight = newBottomRight.second - newTopLeft.second;
-	//todo æ­¤å¤„çš„typeç›´æ¥ä½¿ç”¨äº†frontmatçš„type,å®é™…ä¸Šåº”è¯¥ä½¿ç”¨å¯å…¼å®¹frontmatå’Œbackmatçš„type
+	//todo ´Ë´¦µÄtypeÖ±½ÓÊ¹ÓÃÁËfrontmatµÄtype,Êµ¼ÊÉÏÓ¦¸ÃÊ¹ÓÃ¿É¼æÈİfrontmatºÍbackmatµÄtype
 	cv::Mat newMat(newHeight, newWidth, frontMat.type());
 	Layer newLayer(packMAT(newMat), newTopLeft.first, newTopLeft.second, newBottomRight.first, newBottomRight.second);
 
-	//æ„é€ æ–°å›¾åƒä¸­ä¸¤ä¸ªæ—§å›¾åƒçš„ROI
+	//¹¹ÔìĞÂÍ¼ÏñÖĞÁ½¸ö¾ÉÍ¼ÏñµÄROI
 	cv::Rect newFrontArea(frontLayer.getTopLeftPoint().first - newTopLeft.first,
 		frontLayer.getTopLeftPoint().second - newTopLeft.second,
 		frontLayer.getBottomRightPoint().first - frontLayer.getTopLeftPoint().first,
@@ -394,10 +401,10 @@ void LayerStorage::mergeLayers(Layer& frontLayer, Layer& backLayer, double blend
 	auto frontROI = newMat(newFrontArea);
 	auto backROI = newMat(newBackArea);
 
-	//å¦‚æœä¸¤ä¸ªå›¾åƒæœ‰é‡å éƒ¨åˆ†,åˆ™æ„é€ ä¸¤ä¸ªæ—§å›¾åƒä¸­é‡å ä½ç½®çš„ROI,å¹¶å®Œæˆæ··åˆ
+	//Èç¹ûÁ½¸öÍ¼ÏñÓĞÖØµş²¿·Ö,Ôò¹¹ÔìÁ½¸ö¾ÉÍ¼ÏñÖĞÖØµşÎ»ÖÃµÄROI,²¢Íê³É»ìºÏ
 	if (overlap.first != overlap.second)
 	{
-		//æ„é€ ROI
+		//¹¹ÔìROI
 		cv::Rect frontOverlapArea(overlap.first.first - frontLayer.getTopLeftPoint().first,
 			overlap.first.second - frontLayer.getTopLeftPoint().second,
 			overlap.second.first - overlap.first.first,
@@ -411,17 +418,17 @@ void LayerStorage::mergeLayers(Layer& frontLayer, Layer& backLayer, double blend
 		auto frontBlendROI = frontMat(frontOverlapArea);
 		auto backBlendROI = backMat(backOverlapArea);
 
-		//å°†é‡å ä½ç½®çš„æ··åˆç»“æœå­˜æ”¾åœ¨frongLayerä¸­
+		//½«ÖØµşÎ»ÖÃµÄ»ìºÏ½á¹û´æ·ÅÔÚfrongLayerÖĞ
 		cv::addWeighted(frontBlendROI, blendAlpha,
 			backBlendROI, 1 - blendAlpha,
 			0.0, frontBlendROI);
 	}
 
-	//å°†ç»“æœå¤åˆ¶åˆ°æ–°å›¾å±‚ä¸Š
+	//½«½á¹û¸´ÖÆµ½ĞÂÍ¼²ãÉÏ
 	cv::addWeighted(backROI, 0.0, backMat, 1.0, 0.0, backROI);
 	cv::addWeighted(frontROI, 0.0, frontMat, 1.0, 0.0, frontROI);
 
-	//æ¸…ç†å›¾å±‚
+	//ÇåÀíÍ¼²ã
 	deleteLayer(frontLayer);
 	deleteLayer(backLayer);
 
@@ -436,51 +443,250 @@ void LayerStorage::mergeLayersByID(unsigned frontLayerID, unsigned backLayerID, 
 	mergeLayers(*frontLayerIt, *backLayerIt, blendAlpha);
 }
 
-void ImageProcess::AdjustContrastAndBrightness(ImageProcess& process, Layer& layer, double contrast, double brightness)
-{
-	auto mat = parseMAT(layer.getMat());
-	process.Traces.push(layer.getMat(), layer.getID());
-	cv::Mat dst;
-	mat.convertTo(dst, -1, contrast, brightness);
-	MAT DST = packMAT(dst);
-	layer.setMat(DST);
+
+//Í¼ÔªÍ¼²ãº¯Êı
+void ImageProcess::drawPrimitive(MAT& value, ElementType e, int leftUpX, int leftUpY, int rightDownX, int rightDownY,int size, double B, double G, double R) {
+
+	Mat src(rightDownY - leftUpY + size, rightDownX - leftUpX + size , CV_8UC4, cv::Scalar(255, 255, 255, 0));
+	//cv²¢Î´Ìá¹©ÏÖ³ÉµÄÈı½ÇĞÎ»æÖÆº¯Êı£¬²ÉÓÃµã¼¯»­Í¼
+	std::vector<cv::Point > contour;
+	std::vector<std::vector<cv::Point >> contours;
+
+
+	switch (e)
+	{
+	case ELLIPSE:
+		ellipse(src, cv::Point((rightDownX - leftUpX) / 2, (rightDownY - leftUpY) / 2), cv::Size((rightDownX - leftUpX) / 2, (rightDownY - leftUpY) / 2),
+			0, 0, 360, { B,G,R ,255 }, size, cv::LINE_AA);
+		break;
+	case LINE1:
+		line(src, cv::Point(0, 0), cv::Point(rightDownX - leftUpX, rightDownY - leftUpY), { B,G,R ,255 }, (size >= 1 ? size : 1), cv::LINE_AA);			//ÊÜCV»æÍ¼º¯ÊıÏŞÖÆ£¬Ö»Ìá¹©¾ØĞÎºÍÍÖÔ²µÄÌî³äĞ§¹û
+		break;
+	case LINE2:
+		line(src, cv::Point(0, rightDownY - leftUpY), cv::Point(rightDownX - leftUpX, 0), { B,G,R ,255 }, (size >= 1 ? size : 1), cv::LINE_AA);			//ÊÜCV»æÍ¼º¯ÊıÏŞÖÆ£¬Ö»Ìá¹©¾ØĞÎºÍÍÖÔ²µÄÌî³äĞ§¹û
+		break;
+	case TRIANGLE:
+		contour.reserve(3);
+		contour.push_back(cv::Point(0, rightDownY - leftUpY));
+		contour.push_back(cv::Point(rightDownX - leftUpX, rightDownY - leftUpY));
+		contour.push_back(cv::Point((rightDownX - leftUpX) / 2, 0));
+		contours.push_back(contour);
+		cv::polylines(src, contours, true, cv::Scalar(B, G, R, 255), (size >= 1 ? size : 1), cv::LINE_AA);
+		if (size == -1)cv::fillPoly(src, contours, cv::Scalar(B, G, R, 255));
+		//line(src, cv::Point(leftUpX, rightDownY), cv::Point(rightDownX, rightDownY), { B,G,R ,255 }, (size >= 1 ? size : 1), cv::LINE_AA);
+		//line(src, cv::, cv::Point((leftUpX + rightDownX) / 2, leftUpY), { B,G,R ,255 }, (size >= 1 ? size : 1), cv::LINE_AA);
+		//line(src, cv::Point((leftUpX + rightDownX) / 2, leftUpY), cv::Point(leftUpX, rightDownY), { B,G,R ,255 }, (size >= 1 ? size : 1), cv::LINE_AA);
+		break;
+	case RECTANGULAR:
+		rectangle(src, cv::Point(0, 0), cv::Point(rightDownX, rightDownY), { B,G,R ,255 }, size, cv::LINE_AA);
+		break;
+	default:
+		break;
+	}
+	value = packMAT(src);
 }
 
-void ImageProcess::GammaCorrection(ImageProcess& process, Layer& layer, double gamma)
-{
-	cv::Mat lookUpTable(1, 256, CV_8U);
-	auto p = lookUpTable.ptr();
-	for (int i = 0; i < 256; ++i)
-		p[i] = cv::saturate_cast<uchar>(pow(i / 255.0, gamma) * 255);
+void ImageProcess::movePrimitive(ImageProcess &process, Layer &layer, int dx, int dy) {
 
-	auto mat = parseMAT(layer.getMat());
-	process.Traces.push(layer.getMat(), layer.getID());
-	cv::Mat dst = mat.clone();
-	cv::LUT(mat, lookUpTable, dst);
+	int leftUpX = layer.getTopLeftPoint().first + dx;
+	int leftUpY = layer.getTopLeftPoint().second + dy;
+	int rightDownX = layer.getBottomRightPoint().first + dx;
+	int rightDownY = layer.getBottomRightPoint().second + dy;
+	layer.setTopLeftPoint(leftUpX, leftUpY);
+	layer.setBottomRightPoint(rightDownX, rightDownY);
 
-	MAT DST = packMAT(dst);
-	layer.setMat(DST);
+}
+
+void ImageProcess::scalePrimitive(ImageProcess &process, Layer &layer, int leftUpdx, int leftUpdy, int RightDowndx, int RightDowndy) {
+
+	int leftUpX = layer.getTopLeftPoint().first + leftUpdx;
+	int leftUpY = layer.getTopLeftPoint().second + leftUpdy;
+	int rightDownX = layer.getBottomRightPoint().first + RightDowndx;
+	int rightDownY = layer.getBottomRightPoint().second + RightDowndy;
+	/*
+	switch (p)
+	{
+	case TOP_LEFT:
+	leftUpX += dx;
+	leftUpY += dy;
+	break;
+	case TOP:
+	leftUpY += dy;
+	break;
+	case TOP_RIGHT:
+	leftUpY += dy;
+	rightDownX += dx;
+	break;
+	case RIGHT:
+	rightDownX += dx;
+	break;
+	case BOTTOM_RIGHT:
+	rightDownX += dx;
+	rightDownY += dy;
+	break;
+	case BOTTON:
+	rightDownY += dy;
+	break;
+	case BOTTOM_LEFT:
+	leftUpX += dx;
+	rightDownY += dy;
+	break;
+	case LEFT:
+	leftUpX += dx;
+	break;
+	default:
+	break;
+	}
+
+	*/
+	
+	layer.setTopLeftPoint(leftUpX, leftUpY);
+	layer.setBottomRightPoint(rightDownX, rightDownY);
+
+}
+
+void ImageProcess::changePrimitiveColor(ImageProcess &process, Layer &layer, double B, double G, double R) {
+
+	layer.getLayerAttachment().setPenColor(B, G, R);
+	penParameter::setPenColor(B, G, R);
+
+}
+
+void ImageProcess::changePrimitivePenSize(ImageProcess &process, Layer &layer, int size) {
+	
+	//size=-
+	penParameter::setPenSize(size);
+	layer.getLayerAttachment().setPenSize(size);
+
+}
+
+//ÎÄ×ÖÍ¼²ãº¯Êı
+void ImageProcess::drawText(MAT& src, std::string s, int leftUpX, int leftUpY, int rightDownX, int rightDownY,
+	int size, int scale, FondFace face, double B, double G, double R) {
+
+	Mat NewSrc(rightDownY - leftUpY + 2, rightDownX - leftUpX + 2, CV_8UC4, cv::Scalar(255, 255, 255, 0));
+	cv::putText(NewSrc, s, { 0, rightDownY - leftUpY }, face, scale, cv::Scalar(B, G, R, 255), (size >= 1 ? size : 1), cv::LINE_AA, 0);
+
+	src = packMAT(NewSrc);
 }
 
 
+void ImageProcess::changeTextColor(ImageProcess &process, Layer &layer, double B, double G, double R) {
+	layer.getLayerAttachment().setPenColor(B, G, R);
+	penParameter::setPenColor(B, G, R);
+}
+
+void ImageProcess::changeTextThickness(ImageProcess &process, Layer &layer, int thickness){
+
+	layer.getLayerAttachment().setThickness(thickness);
+	//ĞŞ¸Ä´ÖÏ¸ºóÖØĞÂÈ·¶¨Layer»æÖÆµÄÎ»ÖÃ£¬ºóÃæµÄ·½·¨½ÔÈç´Ë¡£
+	cv::Size text_size = cv::getTextSize(layer.getLayerAttachment().getText(), layer.getLayerAttachment().getFace(),
+		layer.getLayerAttachment().getScale(),(layer.getLayerAttachment().getThickness() >= 1 ? layer.getLayerAttachment().getThickness() : 1), 0);
+	int topLeftX = layer.getTopLeftPoint().first;
+	int	topLeftY = layer.getBottomRightPoint().second - text_size.height;
+	int bottomRightX= layer.getTopLeftPoint().first + text_size.width;
+	int bottomRightY = layer.getBottomRightPoint().second;
+	layer.setTopLeftPoint(topLeftX, topLeftY);
+	layer.setBottomRightPoint(bottomRightX, bottomRightY);
+	penParameter::setPenSize(thickness);
+}
+
+void ImageProcess::changeTextScale(ImageProcess &process, Layer &layer, int scale) {
+	
+	layer.getLayerAttachment().setScale(scale);
+	cv::Size text_size = cv::getTextSize(layer.getLayerAttachment().getText(), layer.getLayerAttachment().getFace(),
+		layer.getLayerAttachment().getScale(), (layer.getLayerAttachment().getThickness() >= 1 ? layer.getLayerAttachment().getThickness() : 1), 0);
+	int topLeftX = layer.getTopLeftPoint().first;
+	int	topLeftY = layer.getBottomRightPoint().second - text_size.height;
+	int bottomRightX = layer.getTopLeftPoint().first + text_size.width;
+	int bottomRightY = layer.getBottomRightPoint().second;
+	layer.setTopLeftPoint(topLeftX, topLeftY);
+	layer.setBottomRightPoint(bottomRightX, bottomRightY);
+	penParameter::setPenScale(scale);
+}
+
+void ImageProcess::changeTextFace(ImageProcess &process, Layer &layer, FondFace face) {
+	layer.getLayerAttachment().setFace(face);
+	cv::Size text_size = cv::getTextSize(layer.getLayerAttachment().getText(), layer.getLayerAttachment().getFace(),
+		layer.getLayerAttachment().getScale(), (layer.getLayerAttachment().getThickness() >= 1 ? layer.getLayerAttachment().getThickness() : 1), 0);
+	int topLeftX = layer.getTopLeftPoint().first;
+	int	topLeftY = layer.getBottomRightPoint().second - text_size.height;
+	int bottomRightX = layer.getTopLeftPoint().first + text_size.width;
+	int bottomRightY = layer.getBottomRightPoint().second;
+	layer.setTopLeftPoint(topLeftX, topLeftY);
+	layer.setBottomRightPoint(bottomRightX, bottomRightY);
+	penParameter::setPenFace(face);
+}
+
+void ImageProcess::moveText(ImageProcess &process, Layer &layer, int dx, int dy) {
+
+	int leftUpX = layer.getTopLeftPoint().first + dx;
+	int leftUpY = layer.getTopLeftPoint().second + dy;
+	int rightDownX = layer.getBottomRightPoint().first + dx;
+	int rightDownY = layer.getBottomRightPoint().second + dy;
+	layer.setTopLeftPoint(leftUpX, leftUpY);
+	layer.setBottomRightPoint(rightDownX, rightDownY);
+
+}
+
+void ImageProcess::rewriteText(ImageProcess &process, Layer &layer, std::string t) {
+
+	layer.getLayerAttachment().setText(t);
+}
+
+
+//ÂË¾µº¯Êı
 void ImageProcess::GaussianBlur(ImageProcess &process, Layer &layer, double strength)
 {
 	auto mat = parseMAT(layer.getMat());
 
-	//ä¿®æ”¹å‰å­˜å‚¨è¯¥å›¾å±‚çš„åŸå›¾åƒ,ä½œä¸ºæ’¤é”€æ“ä½œçš„å¤‡ä»½
+	//ĞŞ¸ÄÇ°´æ´¢¸ÃÍ¼²ãµÄÔ­Í¼Ïñ,×÷Îª³·Ïú²Ù×÷µÄ±¸·İ
 	process.Traces.push(layer.getMat(), layer.getID());
 
 	cv::Mat dst;
-	//å¯¹strengthåšçº¿æ€§æ’å€¼
+	//¶Ôstrength×öÏßĞÔ²åÖµ
 	int size = 3 + strength * (std::min(mat.rows, mat.cols) / 10.0 - 3);
-	//kernelå¿…é¡»æ˜¯å¥‡æ•°å°ºå¯¸
+	//kernel±ØĞëÊÇÆæÊı³ß´ç
 	if (size % 2 == 0) ++size;
 	cv::Size kernel_size(size, size);
 
-	//è‡ªå·±ç¼–å†™çš„å¤„ç†å‡½æ•°çš„å‚æ•°åˆ—è¡¨è¦ç±»ä¼¼cvåº“ä¸­å‡½æ•°çš„å†™æ³•(å¦‚ä¸‹GaussianBlur)
+	//×Ô¼º±àĞ´µÄ´¦Àíº¯ÊıµÄ²ÎÊıÁĞ±íÒªÀàËÆcv¿âÖĞº¯ÊıµÄĞ´·¨(ÈçÏÂGaussianBlur)
 	cv::GaussianBlur(mat, dst, kernel_size, 0);
 
 	MAT DST = packMAT(dst);
+	layer.setMat(DST);
+}
+
+void ImageProcess::NostalgicHue(ImageProcess& process, Layer &layer)
+{
+	Mat dst;
+	process.Traces.push(layer.getMat(), layer.getID());
+	try {
+		dst = NostalgicHueFilter(parseMAT(layer.getMat()));
+	}
+	catch (const process_error& e) {
+		if (e.get_error_code() == FILTER_CHANNELS_ERROR) {
+			throw FILTER_CHANNELS_ERROR;
+		}
+	}
+	auto DST = packMAT(dst);
+	layer.setMat(DST);
+}
+
+void ImageProcess::Sculpture(ImageProcess& process, Layer &layer)
+{
+	Mat dst;
+	process.Traces.push(layer.getMat(), layer.getID());
+	try {
+		auto mat = parseMAT(layer.getMat());
+		dst = SculptureFilter(mat);
+	}
+	catch (const process_error& e) {
+		if (e.get_error_code() == FILTER_CHANNELS_ERROR) {
+			throw FILTER_CHANNELS_ERROR;
+		}
+	}
+	auto DST = packMAT(dst);
 	layer.setMat(DST);
 }
 
@@ -493,8 +699,8 @@ void ImageProcess::StrongLight(ImageProcess& process, Layer &layer)
 		dst = StrongLightFilter(mat);
 	}
 	catch (const process_error& e) {
-		if (e.get_error_code() == FilterChannelsError) {
-			throw FilterChannelsError;
+		if (e.get_error_code() == FILTER_CHANNELS_ERROR) {
+			throw FILTER_CHANNELS_ERROR;
 		}
 	}
 	auto DST = packMAT(dst);
@@ -510,8 +716,8 @@ void ImageProcess::Feather(ImageProcess& process, Layer &layer, double VagueRati
 		dst = FeatherFilter(mat, VagueRatio);
 	}
 	catch (const process_error& e) {
-		if (e.get_error_code() == FilterChannelsError) {
-			throw FilterChannelsError;
+		if (e.get_error_code() == FILTER_CHANNELS_ERROR) {
+			throw FILTER_CHANNELS_ERROR;
 		}
 	}
 	auto DST = packMAT(dst);
@@ -527,8 +733,8 @@ void ImageProcess::DarkTown(ImageProcess& process, Layer &layer, double DarkDegr
 		dst = DarkTownFilter(mat, DarkDegree);
 	}
 	catch (const process_error& e) {
-		if (e.get_error_code() == FilterChannelsError) {
-			throw FilterChannelsError;
+		if (e.get_error_code() == FILTER_CHANNELS_ERROR) {
+			throw FILTER_CHANNELS_ERROR;
 		}
 	}
 	auto DST = packMAT(dst);
@@ -544,8 +750,8 @@ void ImageProcess::Mosaic(ImageProcess& process, Layer &layer, int size)
 		dst = MosaicFilter(mat, size);
 	}
 	catch (const process_error& e) {
-		if (e.get_error_code() == FilterChannelsError) {
-			throw FilterChannelsError;
+		if (e.get_error_code() == FILTER_CHANNELS_ERROR) {
+			throw FILTER_CHANNELS_ERROR;
 		}
 	}
 	auto DST = packMAT(dst);
@@ -561,8 +767,8 @@ void ImageProcess::Diffusion(ImageProcess& process, Layer &layer)
 		dst = DiffusionFilter(mat);
 	}
 	catch (const process_error& e) {
-		if (e.get_error_code() == FilterChannelsError) {
-			throw FilterChannelsError;
+		if (e.get_error_code() == FILTER_CHANNELS_ERROR) {
+			throw FILTER_CHANNELS_ERROR;
 		}
 	}
 	auto DST = packMAT(dst);
@@ -578,8 +784,8 @@ void ImageProcess::Wind(ImageProcess& process, Layer &layer, int strength)
 		dst = WindFilter(mat, strength);
 	}
 	catch (const process_error& e) {
-		if (e.get_error_code() == FilterChannelsError) {
-			throw FilterChannelsError;
+		if (e.get_error_code() == FILTER_CHANNELS_ERROR) {
+			throw FILTER_CHANNELS_ERROR;
 		}
 	}
 	auto DST = packMAT(dst);
