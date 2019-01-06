@@ -106,7 +106,7 @@ public:
 
 class Layer
 {
-protected:
+private:
 	/*
 		MAT在图元/文字图层与光栅化图层中具有不同的行为特征。
 		在图元/文字图层中，一些支持图元/文字图层，改变参数（颜色，大小，位置等）的方法会修改图层中对应的参数，然后重新绘制一遍MAT，
@@ -266,14 +266,16 @@ public:
 	
 	
 	//图元图层操作
-	static void drawPrimitive(MAT& src, ElementType e, int leftUpX, int leftUpY, int rightDownX, int rightDownY, int size, double B, double G, double R);
+	static void drawPrimitive(MAT& src, ElementType e, int leftUpX, int leftUpY, int rightDownX,
+		int rightDownY, int size, double B, double G, double R);
 	static void movePrimitive(ImageProcess &process, Layer &layer, int dx, int dy);		//移动图元图层
-	static void scalePrimitive(ImageProcess &process, Layer &layer, int leftUpdx, int leftUpdy, int RightDowndx, int RightDowndy);
+	static void scalePrimitive(ImageProcess &process, Layer &layer, int leftUpdx, int leftUpdy,int RightDowndx, int RightDowndy);
 	static void changePrimitiveColor(ImageProcess &process, Layer &layer, double B, double G, double R);
 	static void changePrimitivePenSize(ImageProcess &process, Layer &layer, int size);
 
 	//文字图层操作
-	static void drawText(MAT& src, std::string s, int leftUpX, int leftUpY, int rightDownX, int rightDownY, int size, int scale, FondFace face, double B, double G, double R);
+	static void drawText(MAT& src, std::string s, int leftUpX, int leftUpY, int rightDownX, int rightDownY,
+		int size, int scale, FondFace face, double B, double G, double R);
 	static void changeTextColor(ImageProcess &process, Layer &layer, double B, double G, double R);
 	static void ImageProcess::changeTextThickness(ImageProcess &process, Layer &layer, int thickness);
 	static void ImageProcess::changeTextScale(ImageProcess &process, Layer &layer, int scale);

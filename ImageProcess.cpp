@@ -7,7 +7,7 @@ double penParameter::B = 0.0;
 double penParameter::G = 0.0;
 double penParameter::R = 0.0;
 int penParameter::size = 2;
-double penParameter::scale = 1;
+double penParameter::scale = 2;
 FondFace penParameter::face = CV_FONT_HERSHEY_SIMPLEX;
 
 void TraceStack::push(MAT changedMat, unsigned layerID)
@@ -564,7 +564,7 @@ void ImageProcess::changePrimitivePenSize(ImageProcess &process, Layer &layer, i
 void ImageProcess::drawText(MAT& src, std::string s, int leftUpX, int leftUpY, int rightDownX, int rightDownY,
 	int size, int scale, FondFace face, double B, double G, double R) {
 
-	Mat NewSrc(rightDownY - leftUpY + 2, rightDownX - leftUpX + 2, CV_8UC4, cv::Scalar(255, 255, 255, 0));
+	Mat NewSrc((rightDownY - leftUpY) * 2, (rightDownX - leftUpX) *2, CV_8UC4, cv::Scalar(255, 255, 255, 0));
 	cv::putText(NewSrc, s, { 0, rightDownY - leftUpY }, face, scale, cv::Scalar(B, G, R, 255), (size >= 1 ? size : 1), cv::LINE_AA, 0);
 
 	src = packMAT(NewSrc);
@@ -632,6 +632,15 @@ void ImageProcess::moveText(ImageProcess &process, Layer &layer, int dx, int dy)
 void ImageProcess::rewriteText(ImageProcess &process, Layer &layer, std::string t) {
 
 	layer.getLayerAttachment().setText(t);
+	cv::Size text_size = cv::getTextSize(layer.getLayerAttachment().getText(), layer.getLayerAttachment().getFace(),
+		layer.getLayerAttachment().getScale(), (layer.getLayerAttachment().getThickness() >= 1 ? layer.getLayerAttachment().getThickness() : 1), 0);
+	int topLeftX = layer.getTopLeftPoint().first;
+	int	topLeftY = layer.getBottomRightPoint().second - text_size.height;
+	int bottomRightX = layer.getTopLeftPoint().first + text_size.width;
+	int bottomRightY = layer.getBottomRightPoint().second;
+	layer.setTopLeftPoint(topLeftX, topLeftY);
+	layer.setBottomRightPoint(bottomRightX, bottomRightY);
+	
 }
 
 
